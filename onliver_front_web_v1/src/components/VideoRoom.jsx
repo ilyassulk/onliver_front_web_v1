@@ -13,7 +13,7 @@ import { Track } from 'livekit-client';
 import './VideoRoom.css';
 
 function VideoRoom() {
-  const serverUrl = 'ws://onliver.ru:7880';
+  const serverUrl = 'wss://onliver.ru:7880';
   const [token, setToken] = useState(null);
   const [roomName, setRoomName] = useState('exampleRoom');
   const [participantName, setParticipantName] = useState(`user_${Math.floor(Math.random() * 10000)}`);
@@ -22,7 +22,7 @@ function VideoRoom() {
   const getToken = async () => {
     setIsConnecting(true);
     try {
-      const response = await fetch(`http://onliver.ru:8080/token?roomName=${roomName}&participantName=${participantName}`, {
+      const response = await fetch(`https://onliver.ru:8080/token?roomName=${roomName}&participantName=${participantName}`, {
         method: 'GET',
       });
       
