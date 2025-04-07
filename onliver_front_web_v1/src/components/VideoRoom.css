@@ -1,0 +1,63 @@
+.video-room {
+  height: 100vh;
+  width: 100vw;
+  max-width: 100%;
+  background-color: #0f0f0f;
+  display: flex;
+  flex-direction: column;
+}
+
+.connect-form {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: white;
+}
+
+.connect-form h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+  color: black;
+}
+
+.connect-form div {
+  margin-bottom: 15px;
+}
+
+.connect-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: black;
+}
+
+.connect-form input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  color: black;
+}
+
+.connect-form button {
+  width: 100%;
+  padding: 10px;
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.connect-form button:hover {
+  background-color: #0060df;
+}
+
+.connect-form button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+} 
