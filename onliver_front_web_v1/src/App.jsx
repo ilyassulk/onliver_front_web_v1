@@ -1,16 +1,35 @@
-import { useState } from 'react'
 import { Provider } from 'react-redux'
+import { 
+  createBrowserRouter, 
+  RouterProvider, 
+  Navigate 
+} from 'react-router-dom'
 import './App.css'
-import VideoRoom from './components/VideoRoom'
-import store from './store'
+import JoinRoom from './components/JoinRoom/JoinRoom'
+import ActiveRoom from './components/ActiveRoom/ActiveRoom'
+
+
+// Создаем маршруты приложения
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <JoinRoom />
+  },
+  {
+    path: '/room/:roomId',
+    element: <ActiveRoom />
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />
+  }
+])
 
 function App() {
   return (
-    <Provider store={store}>
       <div className="app-container">
-        <VideoRoom />
+        <RouterProvider router={router} />
       </div>
-    </Provider>
   )
 }
 
