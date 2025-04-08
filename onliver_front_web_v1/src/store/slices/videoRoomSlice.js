@@ -39,7 +39,7 @@ export const fetchToken = createAsyncThunk(
 
 const initialState = {
   // URL должен указывать на WebSocket-эндпоинт LiveKit сервера
-  serverUrl: 'wss://onliver.ru:7880', // Убедитесь, что порт правильный
+  serverUrl: 'wss://onliver.ru:8080/livekit', // Убедитесь, что порт правильный
   token: null,
   roomName: 'exampleRoom',
   participantName: `user_${Math.floor(Math.random() * 10000)}`,
