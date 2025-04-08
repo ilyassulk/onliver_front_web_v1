@@ -5,26 +5,41 @@ export const fetchToken = createAsyncThunk(
   'videoRoom/fetchToken',
   async ({ roomName, participantName }, { rejectWithValue }) => {
     try {
+      // Кодируем параметры URL для безопасной передачи
+      const encodedRoomName = encodeURIComponent(roomName);
+      const encodedParticipantName = encodeURIComponent(participantName);
+      
       const response = await fetch(
-        `https://onliver.ru:8080/token?roomName=${roomName}&participantName=${participantName}`,
-        { method: 'GET' }
+        `https://onliver.ru:8080/token?roomName=${encodedRoomName}&participantName=${encodedParticipantName}`,
+        { 
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        }
       );
       
       if (!response.ok) {
-        throw new Error('Ошибка получения токена');
+        throw new Error(`Ошибка получения токена: ${response.status} ${response.statusText}`);
       }
       
       const tokenData = await response.json();
+      
+      if (!tokenData || !tokenData.token) {
+        throw new Error('Получен некорректный ответ от сервера');
+      }
+      
       return tokenData.token;
     } catch (error) {
       console.error('Ошибка при получении токена:', error);
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || 'Неизвестная ошибка при получении токена');
     }
   }
 );
 
 const initialState = {
-  serverUrl: 'wss://onliver.ru:8080/livekit',
+  // URL должен указывать на WebSocket-эндпоинт LiveKit сервера
+  serverUrl: 'wss://onliver.ru:7880', // Убедитесь, что порт правильный
   token: null,
   roomName: 'exampleRoom',
   participantName: `user_${Math.floor(Math.random() * 10000)}`,
@@ -39,6 +54,7 @@ const initialState = {
   selectedAudioDevice: null,
   mediaCheckComplete: false,
   audioLevel: 0,
+  reconnectAttempts: 0,
 };
 
 const videoRoomSlice = createSlice({
@@ -97,10 +113,12 @@ const videoRoomSlice = createSlice({
       .addCase(fetchToken.fulfilled, (state, action) => {
         state.isConnecting = false;
         state.token = action.payload;
+        state.reconnectAttempts = 0; // Сбрасываем счетчик попыток
       })
       .addCase(fetchToken.rejected, (state, action) => {
         state.isConnecting = false;
         state.error = action.payload || 'Не удалось получить токен';
+        state.reconnectAttempts += 1; // Увеличиваем счетчик попыток
       });
   },
 });

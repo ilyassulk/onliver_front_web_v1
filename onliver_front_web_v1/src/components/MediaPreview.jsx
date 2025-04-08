@@ -97,6 +97,28 @@ function MediaPreview() {
         dispatch(setVideoDevices(videoInputs));
         dispatch(setAudioDevices(audioInputs));
         
+        // Если устройства не обнаружены, повторный запрос с запросом разрешений
+        if (videoInputs.length === 0 || audioInputs.length === 0) {
+          try {
+            // Запрашиваем разрешения на доступ
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            
+            // После получения разрешений перечисляем устройства заново
+            const devicesAfterPermission = await navigator.mediaDevices.enumerateDevices();
+            
+            const videoInputsAfter = devicesAfterPermission.filter(device => device.kind === 'videoinput');
+            const audioInputsAfter = devicesAfterPermission.filter(device => device.kind === 'audioinput');
+            
+            dispatch(setVideoDevices(videoInputsAfter));
+            dispatch(setAudioDevices(audioInputsAfter));
+            
+            // Останавливаем временный поток
+            tempStream.getTracks().forEach(track => track.stop());
+          } catch (permissionError) {
+            console.error('Ошибка при запросе разрешений:', permissionError);
+          }
+        }
+        
         // Получение доступа к камере, если она включена
         if (isCameraEnabled) {
           await startVideoStream();
@@ -121,21 +143,28 @@ function MediaPreview() {
       // Останавливаем все потоки
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
       }
       
       if (audioStreamRef.current) {
         audioStreamRef.current.getTracks().forEach(track => track.stop());
+        audioStreamRef.current = null;
       }
       
       // Отменяем requestAnimationFrame
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
       
       // Закрываем AudioContext
       if (audioContextRef.current) {
-        audioContextRef.current.close();
+        audioContextRef.current.close().catch(err => console.error('Ошибка при закрытии AudioContext:', err));
+        audioContextRef.current = null;
       }
+      
+      // Очищаем analyserRef
+      analyserRef.current = null;
       
       // Выполняем все функции очистки
       cleanupFunctions.forEach(fn => fn());
@@ -148,13 +177,15 @@ function MediaPreview() {
       // Останавливаем предыдущий поток, если он есть
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
       }
       
       // Настройки для getUserMedia
       const constraints = {
         video: selectedVideoDevice 
           ? { deviceId: { exact: selectedVideoDevice } } 
-          : true
+          : true,
+        audio: false // Явно указываем, что аудио не нужно
       };
       
       // Получаем поток
@@ -171,12 +202,20 @@ function MediaPreview() {
     }
   };
   
-  // Следим за изменением выбранного видеоустройства
+  // Следим за изменением включения/выключения устройств
   useEffect(() => {
-    if (isCameraEnabled && selectedVideoDevice) {
+    if (isCameraEnabled) {
       startVideoStream();
+    } else if (mediaStreamRef.current) {
+      // Если камера выключена, останавливаем поток
+      mediaStreamRef.current.getVideoTracks().forEach(track => track.stop());
+      
+      // Убираем видео из элемента
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     }
-  }, [selectedVideoDevice, isCameraEnabled]);
+  }, [isCameraEnabled]);
   
   // Функция для анализа звука с микрофона
   const startAudioAnalysis = async () => {
@@ -184,13 +223,21 @@ function MediaPreview() {
       // Останавливаем предыдущий аудиопоток, если он есть
       if (audioStreamRef.current) {
         audioStreamRef.current.getTracks().forEach(track => track.stop());
+        audioStreamRef.current = null;
+      }
+      
+      // Отменяем requestAnimationFrame, если он был запущен
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
       
       // Настройки для getUserMedia
       const constraints = {
         audio: selectedAudioDevice 
           ? { deviceId: { exact: selectedAudioDevice } } 
-          : true
+          : true,
+        video: false // Явно указываем, что видео не нужно
       };
       
       // Получаем поток
@@ -198,17 +245,25 @@ function MediaPreview() {
       audioStreamRef.current = stream;
       
       // Создаем AudioContext и анализатор
-      if (!audioContextRef.current) {
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
       
       const audioContext = audioContextRef.current;
+      
+      // Возобновляем AudioContext, если он был приостановлен
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
       const source = audioContext.createMediaStreamSource(stream);
       
       // Создаем анализатор
-      analyserRef.current = audioContext.createAnalyser();
-      analyserRef.current.fftSize = 256;
-      analyserRef.current.smoothingTimeConstant = 0.8;
+      if (!analyserRef.current) {
+        analyserRef.current = audioContext.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        analyserRef.current.smoothingTimeConstant = 0.8;
+      }
       
       // Подключаем источник к анализатору
       source.connect(analyserRef.current);
@@ -221,35 +276,60 @@ function MediaPreview() {
     }
   };
   
-  // Следим за изменением выбранного аудиоустройства
+  // Следим за изменением включения/выключения устройств
   useEffect(() => {
-    if (isMicrophoneEnabled && selectedAudioDevice) {
+    if (isMicrophoneEnabled) {
       startAudioAnalysis();
+    } else {
+      // Если микрофон выключен, останавливаем анализ и поток
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop());
+        audioStreamRef.current = null;
+      }
+      
+      // Сбрасываем уровень звука
+      dispatch(setAudioLevel(0));
     }
-  }, [selectedAudioDevice, isMicrophoneEnabled]);
+  }, [isMicrophoneEnabled]);
   
   // Функция для обновления уровня звука
   const updateAudioLevel = () => {
     if (analyserRef.current && isMicrophoneEnabled) {
-      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-      analyserRef.current.getByteFrequencyData(dataArray);
-      
-      // Вычисляем среднее значение уровня звука
-      let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
+      try {
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(dataArray);
+        
+        // Вычисляем среднее значение уровня звука
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        
+        const average = sum / dataArray.length;
+        // Нормализуем значение от 0 до 100
+        const normalizedAverage = Math.min(100, Math.max(0, average * 1.5));
+        
+        dispatch(setAudioLevel(normalizedAverage));
+        
+        // Продолжаем обновление в следующем кадре
+        rafRef.current = requestAnimationFrame(updateAudioLevel);
+      } catch (error) {
+        console.error('Ошибка при обновлении уровня звука:', error);
+        // Отменяем анимацию и не запускаем новых кадров
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
       }
-      
-      const average = sum / dataArray.length;
-      // Нормализуем значение от 0 до 100
-      const normalizedAverage = Math.min(100, Math.max(0, average * 1.5));
-      
-      dispatch(setAudioLevel(normalizedAverage));
-      
-      // Продолжаем обновление в следующем кадре
-      rafRef.current = requestAnimationFrame(updateAudioLevel);
-    } else {
-      dispatch(setAudioLevel(0));
+    } else if (rafRef.current) {
+      // Если анализатор не активен или микрофон выключен, останавливаем обновление
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
   };
   
