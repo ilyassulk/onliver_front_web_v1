@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   LiveKitRoom,
   VideoConference,
@@ -11,65 +12,123 @@ import {
 import '@livekit/components-styles';
 import { Track } from 'livekit-client';
 import './VideoRoom.css';
+import { 
+  fetchToken, 
+  setRoomName, 
+  setParticipantName, 
+  clearToken 
+} from '../store/slices/videoRoomSlice';
+import MediaPreview from './MediaPreview';
+
+// Логотип
+const Logo = () => (
+  <div className="app-logo">
+    <span className="logo-text">OnLiver</span>
+    <span className="logo-subtitle">Meet</span>
+  </div>
+);
 
 function VideoRoom() {
-  const serverUrl = 'wss://onliver.ru:8080/livekit';
-  const [token, setToken] = useState(null);
-  const [roomName, setRoomName] = useState('exampleRoom');
-  const [participantName, setParticipantName] = useState(`user_${Math.floor(Math.random() * 10000)}`);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const dispatch = useDispatch();
+  const [screenSize, setScreenSize] = useState('desktop'); // desktop, tablet, mobile
+  const { 
+    serverUrl, 
+    token, 
+    roomName, 
+    participantName, 
+    isConnecting,
+    error,
+    isCameraEnabled,
+    isMicrophoneEnabled
+  } = useSelector(state => state.videoRoom);
 
-  const getToken = async () => {
-    setIsConnecting(true);
-    try {
-      const response = await fetch(`https://onliver.ru:8080/token?roomName=${roomName}&participantName=${participantName}`, {
-        method: 'GET',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Ошибка получения токена');
+  // Определяем размер экрана для адаптивной вёрстки
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width >= 1200) {
+        setScreenSize('desktop');
+      } else if (width >= 768) {
+        setScreenSize('tablet');
+      } else {
+        setScreenSize('mobile');
       }
-      
-      const tokenData = await response.json();
-      setToken(tokenData.token);
-    } catch (error) {
-      console.error('Ошибка при получении токена:', error);
-      alert('Не удалось подключиться. Проверьте консоль для деталей.');
-    } finally {
-      setIsConnecting(false);
-    }
+    };
+
+    // Вызываем обработчик при монтировании
+    handleResize();
+
+    // Добавляем слушатель изменения размера окна
+    window.addEventListener('resize', handleResize);
+
+    // Очищаем слушатель при размонтировании
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  const handleConnect = () => {
+    dispatch(fetchToken({ roomName, participantName }));
   };
 
+  const handleRoomNameChange = (e) => {
+    dispatch(setRoomName(e.target.value));
+  };
+
+  const handleParticipantNameChange = (e) => {
+    dispatch(setParticipantName(e.target.value));
+  };
+
+  const handleDisconnect = () => {
+    dispatch(clearToken());
+  };
+
+  // Показываем форму подключения, если нет токена
   if (!token) {
     return (
-      <div className="connect-form">
-        <h2>Подключиться к комнате</h2>
-        <div>
-          <label>
-            Имя комнаты:
+      <div className={`connect-container ${screenSize}`}>
+        <Logo />
+        <div className={`connect-form ${screenSize}`}>
+          <h2>Подключиться к видеоконференции</h2>
+          
+          {/* Добавляем компонент превью медиа */}
+          <MediaPreview />
+          
+          <div className="form-group">
+            <label>Имя комнаты:</label>
             <input 
               type="text" 
               value={roomName} 
-              onChange={(e) => setRoomName(e.target.value)}
+              onChange={handleRoomNameChange}
+              placeholder="Введите имя комнаты"
             />
-          </label>
-        </div>
-        <div>
-          <label>
-            Ваше имя:
+          </div>
+          <div className="form-group">
+            <label>Ваше имя:</label>
             <input 
               type="text" 
               value={participantName} 
-              onChange={(e) => setParticipantName(e.target.value)}
+              onChange={handleParticipantNameChange}
+              placeholder="Введите ваше имя"
             />
-          </label>
+          </div>
+          
+          <div className="form-footer">
+            <button 
+              className="button button-primary"
+              onClick={handleConnect} 
+              disabled={isConnecting || !roomName || !participantName}
+            >
+              {isConnecting ? 'Подключение...' : 'Присоединиться'}
+            </button>
+          </div>
+          
+          {error && <div className="error-message">{error}</div>}
         </div>
-        <button 
-          onClick={getToken} 
-          disabled={isConnecting || !roomName || !participantName}
-        >
-          {isConnecting ? 'Подключение...' : 'Подключиться'}
-        </button>
+        
+        <div className="connect-footer">
+          <p>©2025 OnLiver Meet</p>
+        </div>
       </div>
     );
   }
@@ -79,9 +138,35 @@ function VideoRoom() {
       serverUrl={serverUrl}
       token={token}
       connect={true}
-      onDisconnected={() => setToken(null)}
-      className="video-room"
+      onDisconnected={handleDisconnect}
+      className={`video-room ${screenSize}`}
+      // Передаем начальное состояние медиа устройств
+      options={{
+        videoCaptureDefaults: {
+          deviceId: undefined,
+          resolution: undefined,
+          publishDefaults: {
+            enabled: isCameraEnabled,
+            simulcast: true,
+            videoCodec: 'vp8',
+          }
+        },
+        audioCaptureDefaults: {
+          deviceId: undefined,
+          publishDefaults: {
+            enabled: isMicrophoneEnabled
+          }
+        }
+      }}
     >
+      <div className={`video-room-header ${screenSize}`}>
+        <Logo />
+        <div className="room-info">
+          <span className="room-name">{roomName}</span>
+          {screenSize !== 'mobile' && <span className="participant-name">({participantName})</span>}
+        </div>
+      </div>
+      
       {/* Рендерит аудио для всех участников */}
       <RoomAudioRenderer />
       
@@ -90,6 +175,13 @@ function VideoRoom() {
       
       {/* Панель управления с кнопками для управления камерой, микрофоном и т.д. */}
       <ControlBar />
+      
+      <button 
+        className={`leave-button button button-primary ${screenSize}`}
+        onClick={handleDisconnect}
+      >
+        {screenSize === 'mobile' ? 'Выйти' : 'Покинуть встречу'}
+      </button>
     </LiveKitRoom>
   );
 }
