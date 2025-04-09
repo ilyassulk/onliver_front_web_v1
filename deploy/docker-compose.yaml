@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  room-manager:
+  web-app:
     image: isdockero/onliver-web-v1:latest
     networks:
       - service-network
