@@ -9,6 +9,7 @@ import {
 import '@livekit/components-styles';
 import { useDataChannel } from '@livekit/components-react';   // ✨ добавлено
 import styles from './ActiveRoom.module.scss';
+import MoviesList from '../MoviesList/MoviesList';
 
 function DataLogger() {                                      // ✨ новый компонент
   useDataChannel('stream-status', (msg) => {
@@ -26,6 +27,7 @@ function DataLogger() {                                      // ✨ новый �
 }
 
 function ActiveRoom() {
+  const [showMovies, setShowMovies] = useState(false);
   const { roomId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -56,10 +58,11 @@ function ActiveRoom() {
         data-lk-theme="default"
       >
         <VideoConference />
-        <RoomAudioRenderer />
-        <ControlBar />    
+        <RoomAudioRenderer />   
         <StreamStatusOverlay/>   
       </LiveKitRoom>
+      <button className={styles.showMoviesBtn} onClick={() => setShowMovies(true)}>Show Movies</button>
+      {showMovies && <MoviesList onClose={() => setShowMovies(false)} />}
     </div>
   );
 }
