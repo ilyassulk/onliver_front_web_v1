@@ -164,8 +164,12 @@ function StreamStatusOverlay() {
         setIsExpanded(false);
         clearInterval(intervalId);
       } else {
-        const newPos = status.positionMs + elapsed;
-        setCurrentPos(Math.min(newPos, status.durationMs));
+        // Обновляем позицию только если трансляция воспроизводится (state === 4)
+        if (status.state === 4) {
+          const newPos = status.positionMs + elapsed;
+          setCurrentPos(Math.min(newPos, status.durationMs));
+        }
+        // Если на паузе (state === 3) или остановлена, позицию не изменяем
       }
     }, 1000);
     return () => clearInterval(intervalId);
