@@ -1,0 +1,410 @@
+.streamWidget {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  user-select: none;
+  max-width: calc(100vw - 40px);
+
+  &.expanded {
+    border-radius: 25px;
+    padding-right: 15px;
+    max-width: calc(100vw - 40px);
+  }
+
+  &.dragging {
+    cursor: grabbing;
+    transition: none;
+  }
+
+  &.mobile {
+    touch-action: none;
+    
+    &.expanded {
+      max-width: calc(100vw - 20px);
+      padding-right: 10px;
+    }
+  }
+
+  :global(.size-6) {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.dragHandle {
+  width: 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  border-radius: 50px 0 0 50px;
+  padding-left: 8px;
+  touch-action: none;
+
+  :global(.size-6) {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &:active {
+    cursor: grabbing;
+    color: white;
+  }
+}
+
+.circleButton {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.playPauseBtn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  touch-action: manipulation;
+
+  :global(.size-6) {
+    width: 28px;
+    height: 28px;
+  }
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #0056b3 0%, #003d80 100%);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.expandBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 123, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  touch-action: manipulation;
+
+  :global(.size-6) {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: rgba(0, 123, 255, 0.3);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
+  gap: 10px;
+  animation: slideIn 0.3s ease;
+  overflow: hidden;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.stopBtn {
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 59, 48, 0.8);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 59, 48, 1);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.timeControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.time {
+  color: white;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  min-width: 45px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.slider {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 60px;
+  touch-action: manipulation;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.2);
+      background: #0056b3;
+    }
+  }
+
+  &::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      background: #0056b3;
+    }
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+}
+
+// Планшеты
+@media (max-width: 768px) {
+  .streamWidget {
+    bottom: 15px;
+    left: 15px;
+    max-width: calc(100vw - 30px);
+
+    &.expanded {
+      max-width: calc(100vw - 30px);
+      padding-right: 8px;
+    }
+  }
+
+  .dragHandle {
+    width: 35px;
+    height: 50px;
+    padding-left: 6px;
+
+    :global(.size-6) {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .playPauseBtn {
+    width: 50px;
+    height: 50px;
+
+    :global(.size-6) {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .expandBtn {
+    width: 25px;
+    height: 25px;
+    margin-left: 8px;
+
+    :global(.size-6) {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .controls {
+    margin-left: 10px;
+    gap: 8px;
+  }
+
+  .stopBtn {
+    width: 30px;
+    height: 30px;
+
+    :global(.size-6) {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .timeControls {
+    gap: 6px;
+  }
+
+  .time {
+    font-size: 11px;
+    min-width: 40px;
+  }
+
+  .slider {
+    min-width: 50px;
+    height: 6px;
+
+    &::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+    }
+
+    &::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+// Очень маленькие экраны (телефоны)
+@media (max-width: 480px) {
+  .streamWidget {
+    bottom: 10px;
+    left: 10px;
+    max-width: calc(100vw - 20px);
+
+    &.expanded {
+      max-width: calc(100vw - 20px);
+      padding-right: 5px;
+    }
+  }
+
+  .dragHandle {
+    width: 30px;
+    height: 45px;
+    padding-left: 4px;
+
+    :global(.size-6) {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .playPauseBtn {
+    width: 45px;
+    height: 45px;
+
+    :global(.size-6) {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .expandBtn {
+    width: 22px;
+    height: 22px;
+    margin-left: 6px;
+
+    :global(.size-6) {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .controls {
+    margin-left: 8px;
+    gap: 6px;
+  }
+
+  .stopBtn {
+    width: 28px;
+    height: 28px;
+
+    :global(.size-6) {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .timeControls {
+    gap: 4px;
+    justify-content: space-between;
+  }
+
+  .time {
+    font-size: 10px;
+    min-width: 35px;
+  }
+
+  // На очень маленьких экранах ползунок скрыт через JS
+  .slider {
+    display: none;
+  }
+} 

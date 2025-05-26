@@ -10,6 +10,7 @@ import '@livekit/components-styles';
 import { useDataChannel } from '@livekit/components-react';   // ✨ добавлено
 import styles from './ActiveRoom.module.scss';
 import MoviesList from '../MoviesList/MoviesList';
+import StreamStatusOverlay from '../StreamStatusOverlay/StreamStatusOverlay';
 
 function DataLogger() {                                      // ✨ новый компонент
   useDataChannel('stream-status', (msg) => {
@@ -69,105 +70,3 @@ function ActiveRoom() {
 
 export default ActiveRoom;
 
-function StreamStatusOverlay() {
-  const [status, setStatus] = useState(null);
-  const [currentPos, setCurrentPos] = useState(0);
-  const lastUpdate = useRef(0);
-
-  // Приходящие сообщения
-  useDataChannel('stream-status', (msg) => {
-    const text = new TextDecoder().decode(msg.payload);
-    try {
-      const { durationMs, positionMs, state, room: roomName } = JSON.parse(text);
-      console.log(JSON.parse(text));
-      
-      setStatus({ durationMs, positionMs, state, roomName });
-      setCurrentPos(positionMs);
-      lastUpdate.current = Date.now();
-    } catch (e) {
-      console.warn('Invalid stream-status payload', e);
-    }
-  });
-
-  // Функция отправки управления трансляцией
-  const sendControl = (command, seekTime) => {
-    console.log(status);
-    
-    if (!status?.roomName) return;
-    fetch('https://onliver.ru:8080/translation/control', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        roomName: status.roomName,
-        command,
-        seekTime,
-      }),
-    }).catch((e) => console.error('Control send error', e));
-  };
-
-  const handlePlayPause = () => {
-    console.log("status.state",status.state);
-    sendControl(status.state === 4 ? 'PAUSE' : 'PLAY', null)};
-  const handleStop = () => sendControl('STOP', null);
-  const handleSeek = (e) => {
-    const val = Number(e.target.value);
-    setCurrentPos(val);
-    sendControl('SEEK', Math.floor(val / 1000));
-  };
-
-  // Эмулируем прогресс и скрытие через 6 секунд после последнего сообщения
-  useEffect(() => {
-    if (!status) return;
-    const intervalId = setInterval(() => {
-      const elapsed = Date.now() - lastUpdate.current;
-      if (elapsed > 6000) {
-        setStatus(null);
-        clearInterval(intervalId);
-      } else {
-        const newPos = status.positionMs + elapsed;
-        setCurrentPos(Math.min(newPos, status.durationMs));
-      }
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [status]);
-
-  // Если нет статуса — не показываем оверлей
-  if (!status) return null;
-
-  // Форматируем мс в HH:MM:SS
-  const fmt = (ms) => {
-    const totalSec = Math.floor(ms / 1000);
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
-    return [
-      h > 0 ? String(h).padStart(2, '0') : null,
-      String(m).padStart(2, '0'),
-      String(s).padStart(2, '0'),
-    ]
-      .filter((x) => x !== null)
-      .join(':');
-  };
-
-  // Показываем Play или Pause в зависимости от state
-  // (state === 4 → «Pause», state === 3 → «Play»)
-  const buttonLabel =
-    status.state === 4 ? '⏸︎' : status.state === 3 ? '▶︎' : '';
-
-  return (
-    <div className={styles.streamStatusOverlay}>
-      <button onClick={handlePlayPause}>{buttonLabel}</button>
-      <button onClick={handleStop}>■</button>
-      <span className="time">{fmt(currentPos)}</span>
-      <input
-        type="range"
-        min={0}
-        max={status.durationMs}
-        value={currentPos}
-        onChange={(e) => setCurrentPos(Number(e.target.value))}
-        onMouseUp={handleSeek}
-      />
-      <span className="time">{fmt(status.durationMs)}</span>
-    </div>
-  );
-}

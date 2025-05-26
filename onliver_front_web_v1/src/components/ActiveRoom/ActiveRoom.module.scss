@@ -1,6 +1,6 @@
 .activeRoomContainer {
   position: relative; /* Добавлено для позиции дочерних оверлеев */
-  height: 100vh;
+  height: 100dvh;
   display: flex; /* Используем flex для управления макетом, если потребуется */
   /* Стили LiveKit компонентов обычно применяются через data-lk-theme */
 }
