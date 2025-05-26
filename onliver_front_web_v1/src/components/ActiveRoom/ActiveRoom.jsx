@@ -2,15 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import {
   LiveKitRoom,
-  VideoConference,
   ControlBar,
-  RoomAudioRenderer,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
 import { useDataChannel } from '@livekit/components-react';   // ✨ добавлено
 import styles from './ActiveRoom.module.scss';
 import MoviesList from '../MoviesList/MoviesList';
 import StreamStatusOverlay from '../StreamStatusOverlay/StreamStatusOverlay';
+import CustomVideoConference from '../CustomVideoConference';
 
 function DataLogger() {                                      // ✨ новый компонент
   useDataChannel('stream-status', (msg) => {
@@ -44,22 +43,59 @@ function ActiveRoom() {
 
   if (!token) return <div>Перенаправление...</div>;
 
-  const handleDisconnect = () => navigate('/');
+  // Логирование параметров подключения
+  console.log('🔑 Параметры подключения:', {
+    roomId,
+    participantName,
+    tokenLength: token?.length,
+    livekitUrl
+  });
+
+  const handleDisconnect = (reason) => {
+    console.log('🚪 Отключение от комнаты:', reason);
+    navigate('/');
+  };
 
   return (
     <div className={styles.activeRoomContainer}>
       <LiveKitRoom
         serverUrl={livekitUrl}
         token={token}
-        connect
+        connect={true}
         options={{
-          publishDefaults: { videoCodec: 'vp9', simulcast: true },
+          publishDefaults: { 
+            videoCodec: 'h264',
+            simulcast: false,
+          },
+          videoCaptureDefaults: {
+            resolution: {
+              width: 640,
+              height: 480,
+              frameRate: 15,
+            },
+          },
+          audioCaptureDefaults: {
+            autoGainControl: true,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
         }}
         onDisconnected={handleDisconnect}
+        onConnected={(room) => {
+          console.log('🎉 Подключен к комнате:', room?.name || 'Неизвестная комната');
+          console.log('🔍 Объект комнаты:', room);
+        }}
+        onError={(error) => {
+          console.error('❌ Ошибка подключения:', error);
+          console.error('🔍 Детали ошибки:', {
+            message: error?.message,
+            code: error?.code,
+            stack: error?.stack
+          });
+        }}
         data-lk-theme="default"
       >
-        <VideoConference />
-        <RoomAudioRenderer />   
+        <CustomVideoConference />
         <StreamStatusOverlay/>   
       </LiveKitRoom>
       <button className={styles.showMoviesBtn} onClick={() => setShowMovies(true)}>Show Movies</button>

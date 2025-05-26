@@ -1,0 +1,192 @@
+.videoArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+// Стили для GridLayout LiveKit
+.videoArea :global(.lk-grid-layout) {
+  height: 100% !important;
+  width: 100% !important;
+  display: grid !important;
+  gap: 8px !important;
+  padding: 8px !important;
+}
+
+// Стили для ParticipantTile LiveKit
+.videoArea :global(.lk-participant-tile) {
+  background: #2a2a2a !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  border: 2px solid transparent !important;
+  transition: all 0.2s ease !important;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.02) !important;
+  }
+}
+
+// Стили для видео элементов
+.videoArea :global(.lk-participant-tile video) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  background: #000 !important;
+}
+
+// Стили для плейсхолдеров
+.videoArea :global(.lk-participant-placeholder) {
+  background: #2a2a2a !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: white !important;
+  font-size: 16px !important;
+}
+
+.screenShareContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.participantGrid {
+  position: absolute;
+  bottom: 80px;
+  right: 16px;
+  width: 200px;
+  height: 150px;
+  z-index: 10;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+// Стили для информации об участниках
+.videoArea :global(.lk-participant-metadata) {
+  position: absolute !important;
+  bottom: 8px !important;
+  left: 8px !important;
+  right: 8px !important;
+  background: rgba(0, 0, 0,0) !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  backdrop-filter: blur(5px) !important;
+  color: white !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.videoArea :global(.lk-participant-name) {
+  color: white !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.participantInfo {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 12px;
+  border-radius: 6px;
+  backdrop-filter: blur(5px);
+}
+
+.participantName {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.connectionQuality {
+  display: flex;
+  align-items: center;
+}
+
+.participantStatus {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.mutedIndicator,
+.cameraOffIndicator,
+.speakingIndicator {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.mutedIndicator {
+  background: rgba(255, 68, 68, 0.9);
+}
+
+.cameraOffIndicator {
+  background: rgba(255, 165, 0, 0.9);
+}
+
+.speakingIndicator {
+  background: rgba(76, 175, 80, 0.9);
+  animation: speakingPulse 1s infinite;
+}
+
+@keyframes speakingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+// Адаптивность
+@media (max-width: 768px) {
+  .participantGrid {
+    width: 120px;
+    height: 90px;
+    bottom: 100px;
+    right: 8px;
+  }
+
+  .videoArea :global(.lk-grid-layout) {
+    gap: 4px !important;
+    padding: 4px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .participantGrid {
+    width: 100px;
+    height: 75px;
+    bottom: 90px;
+    right: 4px;
+  }
+
+  .participantInfo {
+    padding: 4px 8px;
+  }
+
+  .participantName {
+    font-size: 12px;
+  }
+
+  .videoArea :global(.lk-grid-layout) {
+    gap: 2px !important;
+    padding: 2px !important;
+  }
+} 
