@@ -8,5 +8,11 @@ export default defineConfig({
   server: {
     port: 3000,
     cors: true
+  },
+  define: {
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    include: ['sockjs-client', 'stompjs']
   }
 })

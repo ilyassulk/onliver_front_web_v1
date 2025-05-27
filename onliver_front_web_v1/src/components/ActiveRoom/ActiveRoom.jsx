@@ -5,20 +5,23 @@ import {
   ControlBar,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { useDataChannel } from '@livekit/components-react';   // ✨ добавлено
+import { useDataChannel } from '@livekit/components-react';
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
 import styles from './ActiveRoom.module.scss';
 import MoviesList from '../MoviesList/MoviesList';
 import StreamStatusOverlay from '../StreamStatusOverlay/StreamStatusOverlay';
 import CustomVideoConference from '../CustomVideoConference';
+import ChatWidget from '../ChatWidget/ChatWidget';
 
-function DataLogger() {                                      // ✨ новый компонент
+function DataLogger() {
   useDataChannel('stream-status', (msg) => {
     console.log('msg', msg);
     const text = new TextDecoder().decode(msg.payload);
     console.log('[stream-status]', {
       text,
       topic: msg.topic,
-      kind: msg.kind,          // RELIABLE | LOSSY
+      kind: msg.kind,
       sender: msg.participant?.identity ?? 'server',
     });
   });
@@ -28,6 +31,12 @@ function DataLogger() {                                      // ✨ новый �
 
 function ActiveRoom() {
   const [showMovies, setShowMovies] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatConnected, setChatConnected] = useState(false);
+  const [stompClient, setStompClient] = useState(null);
+  const [chatMessages, setChatMessages] = useState({});
+  const [currentChatRoom, setCurrentChatRoom] = useState(null);
+  
   const { roomId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,6 +44,38 @@ function ActiveRoom() {
   const participantName = location.state?.participantName;
 
   const livekitUrl = 'wss://onliver.ru:8080/livekit';
+
+  // WebSocket подключение для чата
+  useEffect(() => {
+    const connectToChat = () => {
+      const socket = new SockJS('https://onliver.ru:8080/ws');
+      const client = Stomp.over(socket);
+      
+      client.connect({}, 
+        function(frame) {
+          console.log('Подключено к чату: ' + frame);
+          setChatConnected(true);
+          setStompClient(client);
+        },
+        function(error) {
+          console.error('Ошибка подключения к чату: ', error);
+          setChatConnected(false);
+          
+          // Пробуем переподключиться через 5 секунд
+          setTimeout(connectToChat, 5000);
+        }
+      );
+    };
+
+    connectToChat();
+
+    // Очистка при размонтировании
+    return () => {
+      if (stompClient) {
+        stompClient.disconnect();
+      }
+    };
+  }, []);
 
   // если токена нет — редирект
   React.useEffect(() => {
@@ -54,6 +95,10 @@ function ActiveRoom() {
   const handleDisconnect = (reason) => {
     console.log('🚪 Отключение от комнаты:', reason);
     navigate('/');
+  };
+
+  const handleToggleChat = () => {
+    setShowChat(!showChat);
   };
 
   return (
@@ -98,8 +143,23 @@ function ActiveRoom() {
         <CustomVideoConference />
         <StreamStatusOverlay/>   
       </LiveKitRoom>
-      <button className={styles.showMoviesBtn} onClick={() => setShowMovies(true)}>Show Movies</button>
-      {showMovies && <MoviesList onClose={() => setShowMovies(false)} />}
+      
+      <ChatWidget 
+        isVisible={showChat}
+        onToggle={handleToggleChat}
+        stompClient={stompClient}
+        connected={chatConnected}
+        messages={chatMessages}
+        setMessages={setChatMessages}
+        currentRoom={currentChatRoom}
+        setCurrentRoom={setCurrentChatRoom}
+        username={participantName || 'Аноним'}
+        userId={`user-${Date.now()}`}
+        roomId={roomId}
+      />
+      
+      {/*<button className={styles.showMoviesBtn} onClick={() => setShowMovies(true)}>Show Movies</button>
+      {showMovies && <MoviesList onClose={() => setShowMovies(false)} />}*/}
     </div>
   );
 }

@@ -9,6 +9,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Полифилл для global переменной, необходимой для sockjs-client
+      if (typeof global === 'undefined') {
+        var global = globalThis;
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

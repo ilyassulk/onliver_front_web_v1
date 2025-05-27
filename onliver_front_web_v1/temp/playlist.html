@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlist Manager - Тестовая страница</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0;
+            color: #1e88e5;
+        }
+        .connection-status {
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+        .connected {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .disconnected {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .rooms {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+            align-items: center;
+        }
+        .room-btn {
+            padding: 10px 15px;
+            background-color: #e3f2fd;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .room-btn.active {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .room-btn:hover:not(.active) {
+            background-color: #bbdefb;
+        }
+        .custom-room {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1976d2;
+        }
+        button:disabled {
+            background-color: #e0e0e0;
+            color: #9e9e9e;
+            cursor: not-allowed;
+        }
+        .playlist-container {
+            display: flex;
+            gap: 20px;
+        }
+        .playlist-info {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .playlist-controls {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .autoplay-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .autoplay-on {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .autoplay-off {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-active {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        .status-stopped {
+            background-color: #fafafa;
+            color: #616161;
+        }
+        .playlist-items {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .playlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        .playlist-item:hover {
+            background-color: #f5f5f5;
+        }
+        .playlist-item.current {
+            background-color: #e3f2fd;
+            border-left: 4px solid #1e88e5;
+        }
+        .item-info {
+            flex: 1;
+        }
+        .item-content {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .item-details {
+            font-size: 12px;
+            color: #666;
+        }
+        .item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .btn-danger {
+            background-color: #f44336;
+        }
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        .btn-secondary {
+            background-color: #757575;
+        }
+        .btn-secondary:hover {
+            background-color: #616161;
+        }
+        .btn-success {
+            background-color: #4caf50;
+        }
+        .btn-success:hover {
+            background-color: #388e3c;
+        }
+        .control-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            color: #1e88e5;
+        }
+        .control-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .status-message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .success {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .loading {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        .empty-playlist {
+            text-align: center;
+            padding: 40px;
+            color: #9e9e9e;
+        }
+        .move-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .move-controls input {
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Playlist Manager</h1>
+            <div class="connection-status disconnected">Отключено</div>
+        </div>
+
+        <div id="status-message" class="status-message"></div>
+
+        <div class="rooms">
+            <button class="room-btn" data-room="general">General</button>
+            <button class="room-btn" data-room="music">Music</button>
+            <button class="room-btn" data-room="videos">Videos</button>
+            <div class="custom-room">
+                <input type="text" id="custom-room" placeholder="Название комнаты">
+                <button id="join-custom">Присоединиться</button>
+            </div>
+        </div>
+
+        <div class="playlist-container">
+            <div class="playlist-info">
+                <div class="playlist-header">
+                    <h2 id="room-title">Выберите комнату</h2>
+                    <div>
+                        <span class="autoplay-status autoplay-off" id="autoplay-status">AutoPlay: OFF</span>
+                        <span class="status-badge status-stopped" id="playback-status">STOPPED</span>
+                    </div>
+                </div>
+
+                <div class="playlist-items" id="playlist-items">
+                    <div class="empty-playlist">
+                        Выберите комнату для просмотра плейлиста
+                    </div>
+                </div>
+            </div>
+
+            <div class="playlist-controls">
+                <div class="control-group">
+                    <h3>Управление воспроизведением</h3>
+                    <button id="toggle-autoplay" disabled>Переключить AutoPlay</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>Запустить ячейку</h3>
+                    <div class="control-form">
+                        <input type="text" id="start-cell-id" placeholder="Cell ID">
+                        <button id="start-cell" disabled>Запустить</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Добавить элемент</h3>
+                    <div class="control-form">
+                        <input type="text" id="content-id" placeholder="Content ID">
+                        <button id="add-item" disabled>Добавить</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Удалить элемент</h3>
+                    <div class="control-form">
+                        <input type="text" id="remove-cell-id" placeholder="Cell ID">
+                        <button id="remove-item" disabled>Удалить</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Переместить элемент</h3>
+                    <div class="control-form">
+                        <input type="text" id="move-cell-id" placeholder="Cell ID">
+                        <input type="number" id="move-target-index" placeholder="Индекс" min="0">
+                        <button id="move-item" disabled>Переместить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        // Состояние приложения
+        const state = {
+            connected: false,
+            stompClient: null,
+            currentRoom: null,
+            playlist: null,
+            stateRequestInterval: null,
+            subscription: null
+        };
+
+        // DOM элементы
+        const elements = {
+            connectionStatus: document.querySelector('.connection-status'),
+            statusMessage: document.getElementById('status-message'),
+            roomButtons: document.querySelectorAll('.room-btn'),
+            customRoomInput: document.getElementById('custom-room'),
+            joinCustomBtn: document.getElementById('join-custom'),
+            roomTitle: document.getElementById('room-title'),
+            autoplayStatus: document.getElementById('autoplay-status'),
+            playbackStatus: document.getElementById('playback-status'),
+            playlistItems: document.getElementById('playlist-items'),
+            toggleAutoplayBtn: document.getElementById('toggle-autoplay'),
+            startCellIdInput: document.getElementById('start-cell-id'),
+            startCellBtn: document.getElementById('start-cell'),
+            contentIdInput: document.getElementById('content-id'),
+            addItemBtn: document.getElementById('add-item'),
+            removeCellIdInput: document.getElementById('remove-cell-id'),
+            removeItemBtn: document.getElementById('remove-item'),
+            moveCellIdInput: document.getElementById('move-cell-id'),
+            moveTargetIndexInput: document.getElementById('move-target-index'),
+            moveItemBtn: document.getElementById('move-item')
+        };
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            // Обработчики событий для комнат
+            elements.roomButtons.forEach(btn => {
+                btn.addEventListener('click', () => joinRoom(btn.dataset.room));
+            });
+
+            elements.joinCustomBtn.addEventListener('click', () => {
+                const roomName = elements.customRoomInput.value.trim();
+                if (roomName) {
+                    joinRoom(roomName);
+                }
+            });
+
+            // Обработчики для управления плейлистом
+            elements.toggleAutoplayBtn.addEventListener('click', toggleAutoPlay);
+            elements.startCellBtn.addEventListener('click', startCell);
+            elements.addItemBtn.addEventListener('click', addItem);
+            elements.removeItemBtn.addEventListener('click', removeItem);
+            elements.moveItemBtn.addEventListener('click', moveItem);
+
+            // Обработчики Enter для форм
+            elements.startCellIdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') startCell();
+            });
+            elements.contentIdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addItem();
+            });
+            elements.removeCellIdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') removeItem();
+            });
+            elements.moveTargetIndexInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') moveItem();
+            });
+
+            // Подключение к WebSocket серверу при загрузке страницы
+            connect();
+        });
+
+        // Подключение к WebSocket серверу
+        function connect() {
+            const socket = new SockJS('https://onliver.ru:8080/ws');
+            state.stompClient = Stomp.over(socket);
+            
+            state.stompClient.connect({}, 
+                function(frame) {
+                    console.log('Подключено: ' + frame);
+                    state.connected = true;
+                    updateConnectionStatus();
+                    showStatusMessage('Успешное подключение к WebSocket', 'success');
+                },
+                function(error) {
+                    console.error('Ошибка подключения: ', error);
+                    state.connected = false;
+                    updateConnectionStatus();
+                    showStatusMessage('Ошибка подключения к WebSocket', 'error');
+                    
+                    // Пробуем переподключиться через 5 секунд
+                    setTimeout(connect, 5000);
+                }
+            );
+        }
+
+        // Присоединение к комнате плейлиста
+        function joinRoom(roomName) {
+            if (state.currentRoom === roomName) return;
+            
+            // Отписываемся от предыдущей комнаты
+            if (state.subscription) {
+                state.subscription.unsubscribe();
+            }
+            
+            // Останавливаем предыдущий интервал запроса состояния
+            if (state.stateRequestInterval) {
+                clearInterval(state.stateRequestInterval);
+            }
+            
+            state.currentRoom = roomName;
+            state.playlist = null;
+            
+            // Обновляем UI
+            updateRoomButtons(roomName);
+            elements.roomTitle.textContent = `Комната: ${roomName}`;
+            enableControls(false);
+            showEmptyPlaylist();
+            
+            if (state.connected) {
+                // Подписываемся на обновления плейлиста
+                state.subscription = state.stompClient.subscribe(`/playlist/${roomName}`, function(message) {
+                    const playlist = JSON.parse(message.body);
+                    handlePlaylistUpdate(playlist);
+                });
+                
+                // Начинаем запрашивать состояние каждые 5 секунд, пока не получим данные
+                requestPlaylistState();
+                state.stateRequestInterval = setInterval(() => {
+                    if (!state.playlist) {
+                        requestPlaylistState();
+                    } else {
+                        clearInterval(state.stateRequestInterval);
+                    }
+                }, 5000);
+                
+                showStatusMessage(`Присоединились к комнате: ${roomName}`, 'loading');
+            } else {
+                showStatusMessage('Нет подключения к серверу', 'error');
+            }
+        }
+
+        // Запрос состояния плейлиста
+        function requestPlaylistState() {
+            if (state.connected && state.currentRoom) {
+                console.log('Запрашиваем состояние плейлиста для комнаты:', state.currentRoom);
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/state`, {}, '{}');
+            }
+        }
+
+        // Обработка обновления плейлиста
+        function handlePlaylistUpdate(playlist) {
+            console.log('Получено обновление плейлиста:', playlist);
+            state.playlist = playlist;
+            
+            // Останавливаем периодические запросы
+            if (state.stateRequestInterval) {
+                clearInterval(state.stateRequestInterval);
+                state.stateRequestInterval = null;
+            }
+            
+            updatePlaylistDisplay();
+            enableControls(true);
+            showStatusMessage(`Плейлист загружен (${playlist.items.length} элементов)`, 'success');
+        }
+
+        // Обновление отображения плейлиста
+        function updatePlaylistDisplay() {
+            if (!state.playlist) return;
+            
+            // Обновляем статусы
+            elements.autoplayStatus.textContent = `AutoPlay: ${state.playlist.autoPlay ? 'ON' : 'OFF'}`;
+            elements.autoplayStatus.className = `autoplay-status ${state.playlist.autoPlay ? 'autoplay-on' : 'autoplay-off'}`;
+            
+            elements.playbackStatus.textContent = state.playlist.status;
+            elements.playbackStatus.className = `status-badge status-${state.playlist.status.toLowerCase()}`;
+            
+            // Обновляем список элементов
+            if (state.playlist.items.length === 0) {
+                showEmptyPlaylist();
+            } else {
+                elements.playlistItems.innerHTML = '';
+                state.playlist.items.forEach((item, index) => {
+                    const itemElement = createPlaylistItemElement(item, index);
+                    elements.playlistItems.appendChild(itemElement);
+                });
+            }
+        }
+
+        // Создание элемента плейлиста
+        function createPlaylistItemElement(item, index) {
+            const div = document.createElement('div');
+            div.className = `playlist-item ${index === state.playlist.currentIndex ? 'current' : ''}`;
+            
+            div.innerHTML = `
+                <div class="item-info">
+                    <div class="item-content">${item.contentId}</div>
+                    <div class="item-details">
+                        Index: ${index} | Cell ID: ${item.cellId}
+                        ${index === state.playlist.currentIndex ? ' | CURRENT' : ''}
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-small btn-success" onclick="quickStart('${item.cellId}')" ${index === state.playlist.currentIndex ? 'disabled' : ''}>▶ Запустить</button>
+                    <div class="move-controls">
+                        <input type="number" min="0" max="${state.playlist.items.length - 1}" 
+                               value="${index}" placeholder="Индекс" style="width: 60px;"
+                               onchange="quickMove('${item.cellId}', this.value)">
+                        <button class="btn-small btn-secondary" onclick="quickMove('${item.cellId}', ${Math.max(0, index - 1)})">↑</button>
+                        <button class="btn-small btn-secondary" onclick="quickMove('${item.cellId}', ${Math.min(state.playlist.items.length - 1, index + 1)})">↓</button>
+                    </div>
+                    <button class="btn-small btn-danger" onclick="quickRemove('${item.cellId}')">Удалить</button>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // Быстрое удаление
+        function quickRemove(cellId) {
+            if (state.connected && state.currentRoom) {
+                const request = { cellId: cellId };
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/remove-item`, {}, JSON.stringify(request));
+            }
+        }
+
+        // Быстрый запуск ячейки
+        function quickStart(cellId) {
+            if (state.connected && state.currentRoom) {
+                const request = { cellId: cellId };
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/start-cell`, {}, JSON.stringify(request));
+                showStatusMessage(`Запускаем ячейку: ${cellId}`, 'loading');
+            }
+        }
+
+        // Быстрое перемещение
+        function quickMove(cellId, targetIndex) {
+            targetIndex = parseInt(targetIndex);
+            if (state.connected && state.currentRoom && !isNaN(targetIndex)) {
+                const request = { cellId: cellId, targetIndex: targetIndex };
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/move-item`, {}, JSON.stringify(request));
+            }
+        }
+
+        // Переключение autoPlay
+        function toggleAutoPlay() {
+            if (state.connected && state.currentRoom) {
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/toggle-autoplay`, {}, '{}');
+            }
+        }
+
+        // Запуск ячейки
+        function startCell() {
+            const cellId = elements.startCellIdInput.value.trim();
+            if (cellId && state.connected && state.currentRoom) {
+                const request = { cellId: cellId };
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/start-cell`, {}, JSON.stringify(request));
+                elements.startCellIdInput.value = '';
+                showStatusMessage(`Запускаем ячейку: ${cellId}`, 'loading');
+            }
+        }
+
+        // Добавление элемента
+        function addItem() {
+            const contentId = elements.contentIdInput.value.trim();
+            if (contentId && state.connected && state.currentRoom) {
+                const request = { contentId: contentId };
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/add-item`, {}, JSON.stringify(request));
+                elements.contentIdInput.value = '';
+            }
+        }
+
+        // Удаление элемента
+        function removeItem() {
+            const cellId = elements.removeCellIdInput.value.trim();
+            if (cellId && state.connected && state.currentRoom) {
+                const request = { cellId: cellId };
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/remove-item`, {}, JSON.stringify(request));
+                elements.removeCellIdInput.value = '';
+            }
+        }
+
+        // Перемещение элемента
+        function moveItem() {
+            const cellId = elements.moveCellIdInput.value.trim();
+            const targetIndex = parseInt(elements.moveTargetIndexInput.value);
+            
+            if (cellId && !isNaN(targetIndex) && state.connected && state.currentRoom) {
+                const request = { cellId: cellId, targetIndex: targetIndex };
+                state.stompClient.send(`/app/playlist/${state.currentRoom}/move-item`, {}, JSON.stringify(request));
+                elements.moveCellIdInput.value = '';
+                elements.moveTargetIndexInput.value = '';
+            }
+        }
+
+        // Вспомогательные функции
+        function updateRoomButtons(activeRoom) {
+            elements.roomButtons.forEach(btn => {
+                if (btn.dataset.room === activeRoom) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function enableControls(enabled) {
+            elements.toggleAutoplayBtn.disabled = !enabled;
+            elements.startCellBtn.disabled = !enabled;
+            elements.addItemBtn.disabled = !enabled;
+            elements.removeItemBtn.disabled = !enabled;
+            elements.moveItemBtn.disabled = !enabled;
+        }
+
+        function showEmptyPlaylist() {
+            elements.playlistItems.innerHTML = '<div class="empty-playlist">Плейлист пуст</div>';
+        }
+
+        function updateConnectionStatus() {
+            if (state.connected) {
+                elements.connectionStatus.textContent = 'Подключено';
+                elements.connectionStatus.className = 'connection-status connected';
+            } else {
+                elements.connectionStatus.textContent = 'Отключено';
+                elements.connectionStatus.className = 'connection-status disconnected';
+                enableControls(false);
+            }
+        }
+
+        function showStatusMessage(message, type) {
+            elements.statusMessage.textContent = message;
+            elements.statusMessage.className = `status-message ${type}`;
+            elements.statusMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                elements.statusMessage.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

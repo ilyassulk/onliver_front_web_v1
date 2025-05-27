@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат Onliver - Тестовая страница</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0;
+            color: #1e88e5;
+        }
+        .rooms {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .room-btn {
+            padding: 10px 15px;
+            background-color: #e3f2fd;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .room-btn.active {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .room-btn:hover:not(.active) {
+            background-color: #bbdefb;
+        }
+        .custom-room {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .chat-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+        .chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e0e0e0;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .username {
+            font-weight: bold;
+            color: #1e88e5;
+        }
+        .time {
+            color: #9e9e9e;
+            font-size: 0.8em;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #f44336;
+            cursor: pointer;
+            font-size: 0.9em;
+            padding: 0;
+            margin-left: 10px;
+        }
+        .content {
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            word-break: break-word;
+        }
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            background-color: #fafafa;
+        }
+        .user-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .send-btn {
+            padding: 10px 20px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .send-btn:hover {
+            background-color: #1976d2;
+        }
+        .connection-status {
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+        .connected {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .disconnected {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .settings {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .setting {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .status-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Тестирование чата Onliver</h1>
+            <div class="connection-status disconnected">Отключено</div>
+        </div>
+
+        <div class="settings">
+            <div class="setting">
+                <label for="username">Имя пользователя:</label>
+                <input type="text" id="username" value="Тестер">
+            </div>
+            <div class="setting">
+                <label for="userid">ID пользователя:</label>
+                <input type="text" id="userid" value="test-user-1">
+            </div>
+        </div>
+
+        <div class="rooms">
+            <button class="room-btn" data-room="general">Общий</button>
+            <button class="room-btn" data-room="support">Поддержка</button>
+            <div class="custom-room">
+                <input type="text" id="custom-room" placeholder="Своя комната">
+                <button id="join-custom">Присоединиться</button>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat">
+                <div id="status-message" class="status-message"></div>
+                <div class="messages" id="messages">
+                    <div class="message">
+                        <div class="message-header">
+                            <span class="username">Система</span>
+                            <span class="time">сейчас</span>
+                        </div>
+                        <div class="content">
+                            Выберите комнату и подключитесь к чату
+                        </div>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <input type="text" class="user-input" id="message-input" placeholder="Введите сообщение..." disabled>
+                    <button class="send-btn" id="send-btn" disabled>Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        // Состояние приложения
+        const state = {
+            connected: false,
+            stompClient: null,
+            currentRoom: null,
+            messages: {},
+            username: 'Тестер',
+            userId: 'test-user-1',
+        };
+
+        // DOM элементы
+        const elements = {
+            connectionStatus: document.querySelector('.connection-status'),
+            messageInput: document.getElementById('message-input'),
+            sendBtn: document.getElementById('send-btn'),
+            messagesContainer: document.getElementById('messages'),
+            roomButtons: document.querySelectorAll('.room-btn'),
+            customRoomInput: document.getElementById('custom-room'),
+            joinCustomBtn: document.getElementById('join-custom'),
+            usernameInput: document.getElementById('username'),
+            userIdInput: document.getElementById('userid'),
+            statusMessage: document.getElementById('status-message'),
+        };
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            // Обработчики событий для комнат
+            elements.roomButtons.forEach(btn => {
+                btn.addEventListener('click', () => joinRoom(btn.dataset.room));
+            });
+
+            elements.joinCustomBtn.addEventListener('click', () => {
+                const roomName = elements.customRoomInput.value.trim();
+                if (roomName) {
+                    joinRoom(roomName);
+                }
+            });
+
+            // Обработчики для отправки сообщений
+            elements.sendBtn.addEventListener('click', sendMessage);
+            elements.messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Обработчики для изменения имени пользователя и идентификатора
+            elements.usernameInput.addEventListener('change', () => {
+                state.username = elements.usernameInput.value;
+            });
+            
+            elements.userIdInput.addEventListener('change', () => {
+                state.userId = elements.userIdInput.value;
+            });
+
+            // Подключение к WebSocket серверу при загрузке страницы
+            connect();
+        });
+
+        // Подключение к WebSocket серверу
+        function connect() {
+            const socket = new SockJS('https://onliver.ru:8080/ws');
+            state.stompClient = Stomp.over(socket);
+            
+            state.stompClient.connect({}, 
+                function(frame) {
+                    console.log('Подключено: ' + frame);
+                    state.connected = true;
+                    updateConnectionStatus();
+                    showStatusMessage('Успешное подключение к WebSocket', 'success');
+                },
+                function(error) {
+                    console.error('Ошибка подключения: ', error);
+                    state.connected = false;
+                    updateConnectionStatus();
+                    showStatusMessage('Ошибка подключения к WebSocket', 'error');
+                    
+                    // Пробуем переподключиться через 5 секунд
+                    setTimeout(connect, 5000);
+                }
+            );
+        }
+
+        // Присоединение к комнате чата
+        function joinRoom(roomName) {
+            // Если мы уже в этой комнате, ничего не делаем
+            if (state.currentRoom === roomName) return;
+            
+            // Если мы уже подписаны на другую комнату, отписываемся от нее
+            if (state.currentRoom && state.subscription) {
+                state.subscription.unsubscribe();
+            }
+            
+            state.currentRoom = roomName;
+            
+            // Обновляем активную кнопку комнаты
+            elements.roomButtons.forEach(btn => {
+                if (btn.dataset.room === roomName) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Очищаем контейнер сообщений
+            elements.messagesContainer.innerHTML = '';
+            
+            // Если кэшированные сообщения для этой комнаты есть, отображаем их
+            if (state.messages[roomName]) {
+                state.messages[roomName].forEach(msg => {
+                    appendMessage(msg);
+                });
+            }
+            
+            // Включаем поле ввода и кнопку отправки
+            elements.messageInput.disabled = false;
+            elements.sendBtn.disabled = false;
+            elements.messageInput.placeholder = `Отправить сообщение в комнату ${roomName}...`;
+            elements.messageInput.focus();
+            
+            // Подписываемся на события этой комнаты
+            if (state.connected) {
+                state.subscription = state.stompClient.subscribe('/chat/' + roomName, function(message) {
+                    const chatMessage = JSON.parse(message.body);
+                    
+                    // Сохраняем сообщение в кэше
+                    if (!state.messages[roomName]) {
+                        state.messages[roomName] = [];
+                    }
+                    state.messages[roomName].push(chatMessage);
+                    
+                    // Отображаем сообщение
+                    appendMessage(chatMessage);
+                });
+                
+                showStatusMessage(`Вы присоединились к комнате: ${roomName}`, 'success');
+            } else {
+                showStatusMessage('Нет подключения к серверу', 'error');
+            }
+        }
+
+        // Отправка сообщения
+        function sendMessage() {
+            const content = elements.messageInput.value.trim();
+            if (content && state.connected && state.currentRoom) {
+                const messageRequest = {
+                    userId: state.userId,
+                    username: state.username,
+                    content: content
+                };
+                
+                // Отправка сообщения на сервер
+                state.stompClient.send(`/app/chat/${state.currentRoom}/send`, {}, JSON.stringify(messageRequest));
+                
+                // Очищаем поле ввода
+                elements.messageInput.value = '';
+                elements.messageInput.focus();
+            }
+        }
+
+        // Удаление сообщения
+        function deleteMessage(messageId) {
+            if (state.connected && state.currentRoom) {
+                const deleteRequest = {
+                    messageId: messageId,
+                    userId: state.userId
+                };
+                
+                // Отправка команды удаления сообщения
+                state.stompClient.send(`/app/chat/${state.currentRoom}/delete`, {}, JSON.stringify(deleteRequest));
+            }
+        }
+
+        // Добавление сообщения в окно чата
+        function appendMessage(message) {
+            console.log("Received message:", message);
+            
+            // Если это сообщение о удалении (определяем по типу DELETE)
+            if (message.type === 'DELETE') {
+                const existingMessage = document.getElementById(`message-${message.id}`);
+                if (existingMessage) {
+                    existingMessage.remove();
+                    
+                    // Также удаляем из кэша
+                    if (state.messages[state.currentRoom]) {
+                        state.messages[state.currentRoom] = state.messages[state.currentRoom].filter(
+                            msg => msg.id !== message.id
+                        );
+                    }
+                }
+                return;
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.id = `message-${message.id}`;
+            
+            // Форматируем время
+            const timestamp = message.timestamp ? new Date(message.timestamp) : new Date();
+            const timeString = timestamp.toLocaleTimeString();
+            
+            // Проверяем, может ли текущий пользователь удалить это сообщение
+            const canDelete = message.userId === state.userId;
+            const deleteButton = canDelete ? 
+                `<button class="delete-btn" onclick="deleteMessage('${message.id}')">Удалить</button>` : '';
+            
+            messageElement.innerHTML = `
+                <div class="message-header">
+                    <span class="username">${message.username || 'Аноним'}</span>
+                    <span>
+                        <span class="time">${timeString}</span>
+                        ${deleteButton}
+                    </span>
+                </div>
+                <div class="content">${message.content}</div>
+            `;
+            
+            elements.messagesContainer.appendChild(messageElement);
+            elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+        }
+
+        // Обновление статуса подключения
+        function updateConnectionStatus() {
+            if (state.connected) {
+                elements.connectionStatus.textContent = 'Подключено';
+                elements.connectionStatus.className = 'connection-status connected';
+            } else {
+                elements.connectionStatus.textContent = 'Отключено';
+                elements.connectionStatus.className = 'connection-status disconnected';
+                
+                // Отключаем поле ввода и кнопку
+                elements.messageInput.disabled = true;
+                elements.sendBtn.disabled = true;
+            }
+        }
+
+        // Отображение статусных сообщений
+        function showStatusMessage(message, type) {
+            elements.statusMessage.textContent = message;
+            elements.statusMessage.className = `status-message ${type}`;
+            elements.statusMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                elements.statusMessage.style.display = 'none';
+            }, 5000); // Скрываем сообщение через 5 секунд
+        }
+    </script>
+</body>
+</html> 
