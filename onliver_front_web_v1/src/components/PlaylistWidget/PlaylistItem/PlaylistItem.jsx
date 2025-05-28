@@ -3,6 +3,8 @@ import styles from './PlaylistItem.module.scss';
 import ElipsisDragIcon from '../../../assets/icons/ElipsisDragIcon';
 import PlayIcon from '../../../assets/icons/PlayIcon';
 import DeleteIcon from '../../../assets/icons/DeleteIcon';
+import UpIcon from '../../../assets/icons/UpIcon';
+import DownIcon from '../../../assets/icons/DownIcon';
 import UpDownIcon from '../../../assets/icons/UpDownIcon';
 
 
@@ -11,11 +13,13 @@ import UpDownIcon from '../../../assets/icons/UpDownIcon';
 function PlaylistItem({ 
   item, 
   index, 
+  totalItems,
   isCurrentItem, 
   playlistStatus,
   onStart, 
   onRemove,
   onMove,
+  onQuickMove,
   onDragStart,
   onDragEnd,
   onDragStateChange,
@@ -32,6 +36,11 @@ function PlaylistItem({
   
   const itemRef = useRef(null);
   const touchTimeoutRef = useRef(null);
+
+  // Определяем, является ли устройство сенсорным
+  const isTouchDevice = () => {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+  };
 
   // Сброс состояния изображения при изменении контента
   useEffect(() => {
@@ -85,6 +94,23 @@ function PlaylistItem({
 
   const handleDragOver = (e) => {
     e.preventDefault();
+  };
+
+  // Обработчики для кнопок перемещения на сенсорных устройствах
+  const handleMoveUp = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onQuickMove && index > 0) {
+      onQuickMove(item.cellId, index - 1);
+    }
+  };
+
+  const handleMoveDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onQuickMove && index < totalItems - 1) {
+      onQuickMove(item.cellId, index + 1);
+    }
   };
 
   // Очистка при размонтировании
@@ -170,6 +196,32 @@ function PlaylistItem({
             </>
           )}
         </div>
+
+        {/* Кнопки перемещения для сенсорных устройств */}
+        {isTouchDevice() && (
+          <div className={styles.touchMoveButtons}>
+            <button 
+              className={`${styles.moveButton} ${styles.moveUpButton} ${index === 0 ? styles.disabled : ''}`}
+              onClick={handleMoveUp}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              disabled={index === 0}
+              title="Переместить вверх"
+            >
+              <UpIcon />
+            </button>
+            <button 
+              className={`${styles.moveButton} ${styles.moveDownButton} ${index === totalItems - 1 ? styles.disabled : ''}`}
+              onClick={handleMoveDown}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              disabled={index === totalItems - 1}
+              title="Переместить вниз"
+            >
+              <DownIcon />
+            </button>
+          </div>
+        )}
 
         {/* Кнопка запуска */}
         <button 

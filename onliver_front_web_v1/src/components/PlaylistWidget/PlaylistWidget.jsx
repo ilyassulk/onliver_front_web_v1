@@ -365,11 +365,13 @@ function PlaylistWidget({
                     <PlaylistItem 
                       item={item}
                       index={index}
+                      totalItems={playlist.items.length}
                       isCurrentItem={index === playlist.currentIndex}
                       playlistStatus={playlist.status}
                       onStart={startCell}
                       onRemove={removeItem}
                       onMove={moveItem}
+                      onQuickMove={quickMove}
                       onDragStart={handleDragStart}
                       onDragEnd={handleDragEnd}
                       onDragStateChange={handleDragStateChange}
