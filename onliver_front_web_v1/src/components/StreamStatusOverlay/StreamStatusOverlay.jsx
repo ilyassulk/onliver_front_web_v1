@@ -54,6 +54,7 @@ function StreamStatusOverlay() {
       }
       
       setStatus({ durationMs, positionMs, state, roomName });
+      // При получении нового сообщения от сервера - сразу переставляем ползунок на эту позицию
       setCurrentPos(positionMs);
       lastUpdate.current = Date.now();
     } catch (e) {
@@ -154,24 +155,28 @@ function StreamStatusOverlay() {
     }
   }, [isDragging, dragStart]);
 
-  // Эмулируем прогресс и скрытие через 6 секунд после последнего сообщения
+  // Простой таймер который добавляет секунду если видео воспроизводится
   useEffect(() => {
     if (!status) return;
+    
     const intervalId = setInterval(() => {
       const elapsed = Date.now() - lastUpdate.current;
+      
+      // Если прошло больше 6 секунд без обновлений - скрываем виджет
       if (elapsed > 6000) {
         setStatus(null);
         setIsExpanded(false);
         clearInterval(intervalId);
-      } else {
-        // Обновляем позицию только если трансляция воспроизводится (state === 4)
-        if (status.state === 4) {
-          const newPos = status.positionMs + elapsed;
-          setCurrentPos(Math.min(newPos, status.durationMs));
-        }
-        // Если на паузе (state === 3) или остановлена, позицию не изменяем
+        return;
       }
+      
+      // Если видео воспроизводится (state === 4) - добавляем 1 секунду к текущей позиции
+      if (status.state === 4) {
+        setCurrentPos(prevPos => Math.min(prevPos + 1000, status.durationMs));
+      }
+      // Если на паузе (state === 3) или остановлена - позицию не изменяем
     }, 1000);
+    
     return () => clearInterval(intervalId);
   }, [status]);
 
