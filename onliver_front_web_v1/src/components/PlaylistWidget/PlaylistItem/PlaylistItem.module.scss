@@ -1,8 +1,8 @@
 // Отдельный элемент плейлиста
 .playlistItem {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 12px;
   padding: 12px;
   margin-bottom: 8px;
   background: white;
@@ -10,6 +10,14 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   position: relative;
+  cursor: grab;
+  
+  // Улучшения для touch устройств
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   &:hover {
     background-color: #f5f5f5;
@@ -29,6 +37,37 @@
     &:hover {
       background-color: #fff3e0;
       transform: none;
+    }
+  }
+
+  // Состояние перетаскивания
+  &.dragging {
+    opacity: 0.7;
+    transform: rotate(2deg);
+    cursor: grabbing;
+    z-index: 1000;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    background-color: #f0f8ff;
+    border: 2px solid #2196f3;
+  }
+
+  // Состояние когда над элементом перетаскивают другой элемент
+  &.dragOver {
+    border: 2px dashed #2196f3;
+    background-color: #e3f2fd;
+    transform: scale(1.02);
+    
+    // Добавляем индикатор места вставки
+    &::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2196f3, #64b5f6);
+      border-radius: 2px;
+      animation: pulse 1s ease-in-out infinite alternate;
     }
   }
 
@@ -52,92 +91,112 @@
     }
   }
 
-  .itemContent {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  // Состояние загрузки
-  .itemLoading {
+  // Иконка перетаскивания
+  .dragHandle {
+    width: 20px;
+    height: 20px;
+    color: #666;
+    cursor: grab;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+    
+    // Увеличиваем область касания для мобильных устройств
+    padding: 8px;
+    margin: -8px;
+    border-radius: 8px;
 
-    .loadingSpinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #ff9800;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      flex-shrink: 0;
+    &:hover {
+      color: #333;
+      transform: scale(1.1);
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    &:active {
+      cursor: grabbing;
+      transform: scale(0.95);
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s ease;
+      pointer-events: none;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+  }
+
+  // Когда элемент перетаскивается, меняем курсор для всего элемента
+  &.dragging .dragHandle {
+    cursor: grabbing;
+    color: #2196f3;
+    background-color: rgba(33, 150, 243, 0.1);
+    
+    svg {
+      transform: rotate(90deg);
+    }
+
+    .dragHandleFallback {
+      transform: rotate(90deg);
     }
   }
 
-  // Контент с информацией
-  .itemWithContent {
+  // Иконка контента
+  .itemIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background-color: #f0f0f0;
     display: flex;
-    gap: 12px;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 
-    .itemAvatar {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-      overflow: hidden;
-      flex-shrink: 0;
-      background-color: #f0f0f0;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .iconPlaceholder {
+      font-size: 20px;
+      color: #999;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: #f5f5f5;
+      border: 2px dashed #ddd;
+      border-radius: 4px;
+    }
 
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.2s;
-
-        &:hover {
-          transform: scale(1.05);
-        }
-      }
-
-      .avatarPlaceholder {
-        font-size: 24px;
-        color: #999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        background-color: #f5f5f5;
-        border: 2px dashed #ddd;
-        border-radius: 6px;
-      }
+    .loadingSpinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #ff9800;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
   }
 
-  // Состояние ошибки
-  .itemError {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    &::before {
-      content: "⚠️";
-      font-size: 24px;
-      flex-shrink: 0;
-    }
-  }
-
+  // Информация о контенте
   .itemInfo {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
+    min-width: 0; // Позволяет тексту сжиматься
 
     .itemTitle {
       font-weight: 600;
@@ -145,86 +204,237 @@
       font-size: 14px;
       line-height: 1.3;
       margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .itemDescription {
       font-size: 12px;
       color: #666;
       line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      margin: 0;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin: 0;
-    }
-
-    .itemDetails {
-      font-size: 11px;
-      color: #999;
-      margin-top: 4px;
     }
   }
 
-  .itemActions {
+  // Кнопка запуска
+  .playButton {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
     display: flex;
-    gap: 4px;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    margin-top: 4px;
+    pointer-events: auto;
+
+    &:hover:not(.disabled) {
+      background-color: #388e3c;
+      transform: scale(1.05);
+    }
+
+    &:active:not(.disabled) {
+      transform: scale(0.95);
+    }
+
+    &.disabled {
+      background-color: #e0e0e0;
+      color: #9e9e9e;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+  }
+
+  // Кнопка удаления
+  .deleteButton {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background-color: #f44336;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    pointer-events: auto;
+
+    &:hover {
+      background-color: #d32f2f;
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+    }
+  }
+
+  // Во время перетаскивания отключаем pointer events для кнопок
+  &.dragging {
+    .playButton,
+    .deleteButton {
+      pointer-events: none;
+    }
   }
 }
 
-// Кнопки в элементах плейлиста
-.btnSmall {
-  padding: 4px 8px;
-  font-size: 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.btnSuccess {
-    background-color: #4caf50;
-    color: white;
-
-    &:hover:not(:disabled) {
-      background-color: #388e3c;
-    }
-  }
-
-  &.btnSecondary {
-    background-color: #757575;
-    color: white;
-
-    &:hover:not(:disabled) {
-      background-color: #616161;
-    }
-  }
-
-  &.btnDanger {
-    background-color: #f44336;
-    color: white;
-
-    &:hover:not(:disabled) {
-      background-color: #d32f2f;
-    }
-  }
-
-  &:disabled {
-    background-color: #e0e0e0;
-    color: #9e9e9e;
-    cursor: not-allowed;
-  }
+// Анимация для индикатора места вставки
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
 }
 
 // Анимация загрузки
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+// Медиа-запросы для мобильных устройств
+@media (max-width: 768px) {
+  .playlistItem {
+    gap: 8px;
+    padding: 8px;
+    
+    .dragHandle {
+      width: 24px;
+      height: 24px;
+      padding: 12px;
+      margin: -12px;
+      
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+    
+    .itemIcon {
+      width: 40px;
+      height: 40px;
+      
+      .iconPlaceholder {
+        font-size: 16px;
+      }
+      
+      .loadingSpinner {
+        width: 20px;
+        height: 20px;
+      }
+    }
+    
+    .playButton {
+      width: 32px;
+      height: 32px;
+      
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+    
+    .deleteButton {
+      width: 28px;
+      height: 28px;
+      
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+}
+
+// Медиа-запросы для очень маленьких экранов
+@media (max-width: 480px) {
+  .playlistItem {
+    .itemInfo {
+      .itemTitle {
+        font-size: 13px;
+      }
+      
+      .itemDescription {
+        font-size: 11px;
+      }
+    }
+  }
+}
+
+// Drop зона для перетаскивания
+.dropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  margin: 4px 0;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover,
+  &.dropZoneHovered {
+    opacity: 1;
+    transform: scaleY(1.2);
+
+    .dropZoneLine {
+      background: linear-gradient(90deg, #2196f3, #64b5f6, #2196f3);
+      height: 4px;
+      box-shadow: 0 0 8px rgba(33, 150, 243, 0.5);
+    }
+  }
+
+  .dropZoneLine {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #2196f3, transparent);
+    border-radius: 2px;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dropZoneIcon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2196f3;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+    animation: pulse 1s ease-in-out infinite alternate;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
 } 

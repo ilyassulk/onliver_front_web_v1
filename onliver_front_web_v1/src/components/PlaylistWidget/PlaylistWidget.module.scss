@@ -56,7 +56,7 @@
   top: 85px;
   right: 15px;
   width: 450px;
-  height: 600px;
+  height: 500px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -271,6 +271,45 @@
       color: #616161;
     }
   }
+
+  .statusContainer {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .refreshBtn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    color: black;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(0, 0, 0, 0.1);
+      color: #333;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &:disabled {
+      color: #ccc;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 // Контейнер элементов плейлиста
@@ -285,6 +324,10 @@
     color: #999;
     font-style: italic;
     margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
   }
 
   // Скроллбары
@@ -343,5 +386,64 @@
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+// Финальная drop зона в конце списка
+.finalDropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  margin: 8px 0;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover,
+  &.finalDropZoneHovered {
+    opacity: 1;
+    transform: scaleY(1.1);
+
+    .finalDropZoneLine {
+      background: linear-gradient(90deg, #2196f3, #64b5f6, #2196f3);
+      height: 6px;
+      box-shadow: 0 0 12px rgba(33, 150, 243, 0.6);
+    }
+  }
+
+  .finalDropZoneLine {
+    width: 90%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #2196f3, transparent);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .finalDropZoneIcon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2196f3;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+    animation: pulse 1s ease-in-out infinite alternate;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 } 

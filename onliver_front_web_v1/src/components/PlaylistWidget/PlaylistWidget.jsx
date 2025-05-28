@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AddIcon from '../../assets/icons/AddIcon';
+import UpDownIcon from '../../assets/icons/UpDownIcon';
+import RefreshIcon from '../../assets/icons/RefreshIcon';
 import PlaylistItem from './PlaylistItem/PlaylistItem';
+import DropZone from './DropZone/DropZone';
 import MoviesList from '../MoviesList/MoviesList';
 import styles from './PlaylistWidget.module.scss';
+
+
 
 function PlaylistWidget({
   isVisible,
@@ -13,8 +18,11 @@ function PlaylistWidget({
 }) {
   const [playlist, setPlaylist] = useState(null);
   const [subscription, setSubscription] = useState(null);
-  const [stateRequestInterval, setStateRequestInterval] = useState(null);
   const [showMoviesList, setShowMoviesList] = useState(false);
+  const [isDragMode, setIsDragMode] = useState(false);
+  
+  // Состояние для drag and drop
+  const [draggedItem, setDraggedItem] = useState(null);
   
   // Состояние для хранения информации о контенте
   const [contentCache, setContentCache] = useState(new Map());
@@ -78,14 +86,12 @@ function PlaylistWidget({
 
   // Присоединение к комнате плейлиста
   const joinRoom = (roomName) => {
+    console.log('Присоединяемся к комнате:', roomName);
+    
     // Отписываемся от предыдущей комнаты
     if (subscription) {
+      console.log('Отписываемся от предыдущей подписки');
       subscription.unsubscribe();
-    }
-    
-    // Останавливаем предыдущий интервал запроса состояния
-    if (stateRequestInterval) {
-      clearInterval(stateRequestInterval);
     }
     
     setPlaylist(null);
@@ -97,18 +103,11 @@ function PlaylistWidget({
         handlePlaylistUpdate(playlistData);
       });
       
+      console.log('Установлена новая подписка для комнаты:', roomName);
       setSubscription(newSubscription);
       
-      // Начинаем запрашивать состояние каждые 5 секунд, пока не получим данные
+      // Запрашиваем состояние сразу
       requestPlaylistState(roomName);
-      const interval = setInterval(() => {
-        if (!playlist) {
-          requestPlaylistState(roomName);
-        } else {
-          clearInterval(interval);
-        }
-      }, 5000);
-      setStateRequestInterval(interval);
     }
   };
 
@@ -135,12 +134,6 @@ function PlaylistWidget({
           fetchContentInfo(item.contentId);
         }
       });
-    }
-    
-    // Останавливаем периодические запросы
-    if (stateRequestInterval) {
-      clearInterval(stateRequestInterval);
-      setStateRequestInterval(null);
     }
   };
 
@@ -192,12 +185,20 @@ function PlaylistWidget({
     }
   };
 
-  // Перемещение элемента (используется только в PlaylistItem через quickMove)
   const quickMove = (cellId, targetIndex) => {
     targetIndex = parseInt(targetIndex);
     if (connected && roomId && !isNaN(targetIndex) && stompClient) {
       const request = { cellId: cellId, targetIndex: targetIndex };
       stompClient.send(`/app/playlist/${roomId}/move-item`, {}, JSON.stringify(request));
+    }
+  };
+
+  // Перемещение элемента через drag & drop
+  const moveItem = (cellId, targetIndex) => {
+    if (connected && roomId && stompClient) {
+      const request = { cellId: cellId, targetIndex: targetIndex };
+      stompClient.send(`/app/playlist/${roomId}/move-item`, {}, JSON.stringify(request));
+      console.log(`Перемещаем ячейку ${cellId} на позицию ${targetIndex}`);
     }
   };
 
@@ -208,24 +209,74 @@ function PlaylistWidget({
     }
   };
 
+  // Обработчик изменения состояния перетаскивания
+  const handleDragStateChange = (isDragging) => {
+    setIsDragMode(isDragging);
+  };
+
+  // Обработчик начала drag операции
+  const handleDragStart = (item, index) => {
+    console.log('Начало перетаскивания:', item);
+    setDraggedItem({ ...item, originalIndex: index });
+    setIsDragMode(true);
+  };
+
+  // Обработчик окончания drag операции
+  const handleDragEnd = () => {
+    console.log('Окончание перетаскивания');
+    setDraggedItem(null);
+    setIsDragMode(false);
+  };
+
+  // Обработчик drop в DropZone
+  const handleDropZoneDrop = (cellId, targetIndex) => {
+    if (!draggedItem || draggedItem.cellId !== cellId) {
+      console.error('Несоответствие данных drag операции');
+      return;
+    }
+
+    const originalIndex = draggedItem.originalIndex;
+    
+    console.log(`Перемещение ячейки ${cellId} с позиции ${originalIndex} на позицию ${targetIndex}`);
+    
+    // Корректируем индекс если перемещаем элемент вниз
+    let adjustedTargetIndex = targetIndex;
+    if (originalIndex < targetIndex) {
+      adjustedTargetIndex = targetIndex - 1;
+    }
+    
+    // Отправляем запрос на сервер
+    quickMove(cellId, adjustedTargetIndex);
+    
+    // Сбрасываем состояние drag
+    handleDragEnd();
+  };
+
+  // Функция для очистки подписок
+  const cleanupSubscriptions = () => {
+    console.log('Очищаем подписки');
+    if (subscription) {
+      subscription.unsubscribe();
+      setSubscription(null);
+    }
+  };
+
   // Автоматическое присоединение к комнате при подключении
   useEffect(() => {
     if (connected && roomId && isVisible) {
       joinRoom(roomId);
+    } else if (!isVisible) {
+      // Очищаем подписки при закрытии виджета
+      cleanupSubscriptions();
     }
   }, [connected, roomId, isVisible]);
 
-  // Очистка подписки при размонтировании
+  // Очистка подписки при размонтировании компонента
   useEffect(() => {
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-      if (stateRequestInterval) {
-        clearInterval(stateRequestInterval);
-      }
+      cleanupSubscriptions();
     };
-  }, [subscription, stateRequestInterval]);
+  }, []); // Убираем dependency array - cleanup должен работать только при unmount
 
   return (
     <>
@@ -268,9 +319,19 @@ function PlaylistWidget({
               >
                 <AddIcon />
               </button>
-              <span className={`${styles.statusBadge} ${styles[`status${playlist.status.toLowerCase()}`]}`}>
-                {playlist.status}
-              </span>
+              <div className={styles.statusContainer}>
+                <span className={`${styles.statusBadge} ${styles[`status${playlist.status.toLowerCase()}`]}`}>
+                  {playlist.status}
+                </span>
+                <button 
+                  className={styles.refreshBtn}
+                  onClick={() => requestPlaylistState(roomId)}
+                  disabled={!connected}
+                  title="Обновить состояние плейлиста"
+                >
+                  <RefreshIcon />
+                </button>
+              </div>
             </div>
           )}
 
@@ -283,23 +344,49 @@ function PlaylistWidget({
             ) : playlist.items.length === 0 ? (
               <div className={styles.emptyState}>
                 Плейлист пуст
+                {/* DropZone для пустого плейлиста */}
+                <DropZone 
+                  index={0}
+                  onDrop={handleDropZoneDrop}
+                  draggedItem={draggedItem}
+                />
               </div>
             ) : (
-              playlist.items.map((item, index) => (
-                <PlaylistItem 
-                  key={item.cellId} 
-                  item={item}
-                  index={index}
-                  isCurrentItem={index === playlist.currentIndex}
-                  playlistStatus={playlist.status}
-                  onStart={startCell}
-                  onMoveUp={() => quickMove(item.cellId, Math.max(0, index - 1))}
-                  onMoveDown={() => quickMove(item.cellId, Math.min(playlist.items.length - 1, index + 1))}
-                  onRemove={removeItem}
-                  contentInfo={contentCache.get(item.contentId)}
-                  loadingContent={loadingContent.has(item.contentId)}
+              <>
+                {playlist.items.map((item, index) => (
+                  <React.Fragment key={item.cellId}>
+                    {/* DropZone перед каждым элементом */}
+                    <DropZone 
+                      index={index}
+                      onDrop={handleDropZoneDrop}
+                      draggedItem={draggedItem}
+                    />
+                    
+                    <PlaylistItem 
+                      item={item}
+                      index={index}
+                      isCurrentItem={index === playlist.currentIndex}
+                      playlistStatus={playlist.status}
+                      onStart={startCell}
+                      onRemove={removeItem}
+                      onMove={moveItem}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      onDragStateChange={handleDragStateChange}
+                      isDragMode={isDragMode}
+                      contentInfo={contentCache.get(item.contentId)}
+                      loadingContent={loadingContent.has(item.contentId)}
+                    />
+                  </React.Fragment>
+                ))}
+                
+                {/* DropZone в конце списка */}
+                <DropZone 
+                  index={playlist.items.length}
+                  onDrop={handleDropZoneDrop}
+                  draggedItem={draggedItem}
                 />
-              ))
+              </>
             )}
           </div>
 
