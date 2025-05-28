@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ChatIcon from '../../assets/icons/ChatIcon';
 import styles from './ChatWidget.module.scss';
 
 function ChatWidget({
@@ -116,19 +115,6 @@ function ChatWidget({
 
   return (
     <>
-      {/* Кнопка чата */}
-      <div className={styles.chatToggleContainer}>
-        <div className={styles.chatToggleBackground}>
-          <button 
-            className={styles.chatToggleBtn}
-            onClick={onToggle}
-            title="Открыть чат"
-          >
-            <ChatIcon />
-          </button>
-        </div>
-      </div>
-
       {/* Виджет чата */}
       {isVisible && (
         <div className={styles.chatWidget}>

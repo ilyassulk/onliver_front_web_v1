@@ -1,0 +1,187 @@
+// Основной контейнер для кнопок виджетов
+.widgetToggleContainer {
+  position: fixed;
+  top: 20px;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: row;
+  align-items: center; // Центрируем по вертикали
+  transition: transform 0.3s ease, opacity 0.3s ease;
+
+  &.hidden {
+    transform: translateX(calc(100% - 32px)); // Оставляем видимой только кнопку скрытия (меньший размер)
+  }
+}
+
+// Контейнер для кнопки скрытия/показа - отдельно от основного контейнера
+.toggleVisibilityContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Кнопка скрытия/показа контейнера - меньше и отдельно
+.toggleVisibilityBtn {
+  width: 32px; // Меньше размер
+  height: 32px; // Меньше размер
+  border-radius: 16px 0 0 16px; // Полукруглая форма слева
+  border: none;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    width: 16px; // Меньше иконка
+    height: 16px; // Меньше иконка
+  }
+}
+
+// Контейнер с кнопками виджетов - основной контейнер
+.widgetButtonsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  background: #000000; // Черный фон для основного контейнера
+  border-radius: 25px 0 0 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 8px;
+
+  &.hidden {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+// Обертка для каждой кнопки виджета
+.widgetButtonWrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+
+  // Убираем фоновый контейнер, так как теперь есть общий
+  &::before {
+    display: none;
+  }
+}
+
+// Общие стили для кнопок виджетов
+.widgetBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  margin-right: 0;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.active {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+// Стили для кнопки чата
+.chatBtn {
+  background: linear-gradient(135deg, #1e88e5, #1976d2);
+  box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(30, 136, 229, 0.5);
+  }
+
+  &.active {
+    box-shadow: 0 4px 12px rgba(30, 136, 229, 0.5), 0 0 0 3px rgba(30, 136, 229, 0.3);
+  }
+}
+
+// Стили для кнопки плейлиста
+.playlistBtn {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.5);
+  }
+
+  &.active {
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.5), 0 0 0 3px rgba(255, 152, 0, 0.3);
+  }
+}
+
+// Адаптивность для мобильных устройств
+@media (max-width: 768px) {
+  .widgetToggleContainer {
+    top: 10px;
+    
+    &.hidden {
+      transform: translateX(calc(100% - 28px)); // Корректируем для мобильных размеров
+    }
+  }
+
+  .toggleVisibilityBtn {
+    width: 28px; // Меньше для мобильных
+    height: 28px; // Меньше для мобильных
+    border-radius: 14px 0 0 14px;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .widgetButtonsContainer {
+    padding: 6px; // Уменьшаем отступы для мобильных
+  }
+
+  .widgetBtn {
+    width: 45px;
+    height: 45px;
+    margin-right: 0; // Убираем отступ для мобильных
+    
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .widgetButtonWrapper::before {
+    display: none; // Убираем фоновый контейнер для мобильных
+  }
+} 

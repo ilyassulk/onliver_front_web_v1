@@ -13,6 +13,8 @@ import MoviesList from '../MoviesList/MoviesList';
 import StreamStatusOverlay from '../StreamStatusOverlay/StreamStatusOverlay';
 import CustomVideoConference from '../CustomVideoConference';
 import ChatWidget from '../ChatWidget/ChatWidget';
+import PlaylistWidget from '../PlaylistWidget/PlaylistWidget';
+import WidgetToggleContainer from '../WidgetToggleContainer/WidgetToggleContainer';
 
 function DataLogger() {
   useDataChannel('stream-status', (msg) => {
@@ -32,6 +34,7 @@ function DataLogger() {
 function ActiveRoom() {
   const [showMovies, setShowMovies] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showPlaylist, setShowPlaylist] = useState(false);
   const [chatConnected, setChatConnected] = useState(false);
   const [stompClient, setStompClient] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
@@ -101,6 +104,10 @@ function ActiveRoom() {
     setShowChat(!showChat);
   };
 
+  const handleTogglePlaylist = () => {
+    setShowPlaylist(!showPlaylist);
+  };
+
   return (
     <div className={styles.activeRoomContainer}>
       <LiveKitRoom
@@ -144,6 +151,14 @@ function ActiveRoom() {
         <StreamStatusOverlay/>   
       </LiveKitRoom>
       
+      {/* Объединенный контейнер кнопок */}
+      <WidgetToggleContainer
+        onChatToggle={handleToggleChat}
+        onPlaylistToggle={handleTogglePlaylist}
+        chatVisible={showChat}
+        playlistVisible={showPlaylist}
+      />
+      
       <ChatWidget 
         isVisible={showChat}
         onToggle={handleToggleChat}
@@ -155,6 +170,14 @@ function ActiveRoom() {
         setCurrentRoom={setCurrentChatRoom}
         username={participantName || 'Аноним'}
         userId={`user-${Date.now()}`}
+        roomId={roomId}
+      />
+      
+      <PlaylistWidget 
+        isVisible={showPlaylist}
+        onToggle={handleTogglePlaylist}
+        stompClient={stompClient}
+        connected={chatConnected}
         roomId={roomId}
       />
       

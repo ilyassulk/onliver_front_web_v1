@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import AddIcon from '../../assets/icons/AddIcon';
+import LoadIcon from '../../assets/icons/LoadIcon';
 import styles from './MoviesList.module.scss';
 
-function MoviesList({ onClose }) {
+function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState(null);
 
   const fetchMovies = async () => {
     setLoading(true);
@@ -41,37 +44,128 @@ function MoviesList({ onClose }) {
     }
   };
 
+  const handleAddToPlaylist = (movieId) => {
+    if (onAddToPlaylist) {
+      onAddToPlaylist(movieId);
+    }
+  };
+
+  const handleViewMovie = (movie) => {
+    setSelectedMovie(movie);
+  };
+
+  const handleCloseMovieView = () => {
+    setSelectedMovie(null);
+  };
+
   console.log(movies);
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <div className={styles.header}>
-          <h2>Movies</h2>
-          <button onClick={onClose}>×</button>
-        </div>
-        <button className={styles.createBtn} onClick={() => setShowForm(true)}>Create Movie</button>
-        {error && <div className={styles.error}>{error}</div>}
-        {loading ? (
-          <div>Loading...</div>
-        ) : (
-          <div className={styles.grid}>
-            {movies.map((movie) => (
-              <div key={movie.id} className={styles.card}>
-                <img src={movie.avatarUrl} alt={movie.name} />
-                <h3>{movie.name}</h3>
-                <p>{movie.description}</p>
-                <button onClick={() => handleDelete(movie.id)}>Delete</button>
-              </div>
-            ))}
+          <h2>{showAddButtons ? 'Добавить фильм в плейлист' : 'Movies'}</h2>
+          <div className={styles.headerActions}>
+              <button 
+                className={styles.loadBtn} 
+                onClick={() => setShowForm(true)}
+                title="Загрузить новый контент"
+              >
+                <LoadIcon />
+                Загрузить
+              </button>
+            <button className={styles.closeBtn} onClick={onClose}>×</button>
           </div>
-        )}
+        </div>
+        {error && <div className={styles.error}>{error}</div>}
+        
+        <div className={styles.contentArea}>
+          {loading ? (
+            <div>Loading...</div>
+          ) : (
+            <div className={styles.grid}>
+              {movies.map((movie) => (
+                <div key={movie.id} className={styles.card}>
+                  <img src={movie.avatarUrl} alt={movie.name} />
+                  <h3>{movie.name}</h3>
+                  <div className={styles.cardActions}>
+                    {showAddButtons ? (
+                      <>
+                        <button 
+                          className={styles.addToPlaylistBtn}
+                          onClick={() => handleAddToPlaylist(movie.id)}
+                          title="Добавить в плейлист"
+                        >
+                          <AddIcon />
+                          Добавить
+                        </button>
+                        <button 
+                          className={styles.viewBtn}
+                          onClick={() => handleViewMovie(movie)}
+                          title="Просмотреть карточку"
+                        >
+                          👁️ Просмотр
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button 
+                          className={styles.viewBtn}
+                          onClick={() => handleViewMovie(movie)}
+                          title="Просмотреть карточку"
+                        >
+                          👁️ Просмотр
+                        </button>
+                        <button 
+                          className={styles.deleteBtn}
+                          onClick={() => handleDelete(movie.id)}
+                        >
+                          🗑️ Удалить
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
         <div className={styles.pagination}>
           <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</button>
           <span>{page + 1} / {totalPages}</span>
           <button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
+        
         {showForm && <CreateMovieForm onCloseForm={() => { setShowForm(false); fetchMovies(); }} />}
+        {selectedMovie && <MovieDetailView movie={selectedMovie} onClose={handleCloseMovieView} />}
+      </div>
+    </div>
+  );
+}
+
+function MovieDetailView({ movie, onClose }) {
+  return (
+    <div className={styles.detailOverlay}>
+      <div className={styles.detailModal}>
+        <div className={styles.detailHeader}>
+          <h2>Информация о фильме</h2>
+          <button className={styles.detailCloseBtn} onClick={onClose}>×</button>
+        </div>
+        
+        <div className={styles.detailContent}>
+          <div className={styles.detailImageContainer}>
+            <img src={movie.avatarUrl} alt={movie.name} className={styles.detailImage} />
+          </div>
+          
+          <div className={styles.detailInfo}>
+            <h3 className={styles.detailTitle}>{movie.name}</h3>
+            <div className={styles.detailDescription}>
+              <h4>Описание:</h4>
+              <p>{movie.description}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -124,27 +218,93 @@ function CreateMovieForm({ onCloseForm }) {
   return (
     <div className={styles.formOverlay}>
       <div className={styles.formModal}>
-        <button className={styles.closeBtn} onClick={() => onCloseForm()}>×</button>
-        <h3>Create Movie</h3>
+        <div className={styles.formHeader}>
+          <h3>Загрузить новый контент</h3>
+          <button className={styles.formCloseBtn} onClick={() => onCloseForm()}>×</button>
+        </div>
+        
         {error && <div className={styles.error}>{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+        
+        <form onSubmit={handleSubmit} className={styles.uploadForm}>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Название</label>
+            <input 
+              type="text" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              required 
+              className={styles.formInput}
+              placeholder="Введите название фильма"
+            />
           </div>
-          <div>
-            <label>Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} required />
+          
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Описание</label>
+            <textarea 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)} 
+              required 
+              className={styles.formTextarea}
+              placeholder="Введите описание фильма"
+              rows="3"
+            />
           </div>
-          <div>
-            <label>Avatar</label>
-            <input type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files[0])} required />
+          
+          <div className={styles.fileInputsContainer}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Постер</label>
+              <div className={styles.fileInputWrapper}>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setAvatarFile(e.target.files[0])} 
+                  required 
+                  className={styles.fileInput}
+                  id="avatar-input"
+                />
+                <label htmlFor="avatar-input" className={styles.fileInputLabel}>
+                  <LoadIcon />
+                  {avatarFile ? avatarFile.name : 'Выберите изображение'}
+                </label>
+              </div>
+            </div>
+            
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Видео</label>
+              <div className={styles.fileInputWrapper}>
+                <input 
+                  type="file" 
+                  accept="video/*" 
+                  onChange={(e) => setVideoFile(e.target.files[0])} 
+                  required 
+                  className={styles.fileInput}
+                  id="video-input"
+                />
+                <label htmlFor="video-input" className={styles.fileInputLabel}>
+                  <LoadIcon />
+                  {videoFile ? videoFile.name : 'Выберите видео файл'}
+                </label>
+              </div>
+            </div>
           </div>
-          <div>
-            <label>Video</label>
-            <input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files[0])} required />
+          
+          <div className={styles.formActions}>
+            <button 
+              type="button" 
+              onClick={onCloseForm}
+              className={styles.cancelBtn}
+              disabled={loading}
+            >
+              Отмена
+            </button>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className={styles.submitBtn}
+            >
+              {loading ? 'Загрузка...' : 'Загрузить контент'}
+            </button>
           </div>
-          <button type="submit" disabled={loading}>{loading ? 'Creating...' : 'Create'}</button>
         </form>
       </div>
     </div>
