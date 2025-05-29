@@ -5,15 +5,17 @@ import styles from './JoinRoom.module.scss';
 function JoinRoom() {
   const [roomName, setRoomName] = useState('');
   const [participantName, setParticipantName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleJoinRoom = async (event) => {
     event.preventDefault();
     if (!roomName || !participantName) {
-      alert('Пожалуйста, введите имя комнаты и имя участника.');
+      alert('Пожалуйста, введите название комнаты и ваше имя.');
       return;
     }
 
+    setIsLoading(true);
     try {
       // Получаем токен от вашего бэкенда
       const resp = await fetch(
@@ -29,33 +31,74 @@ function JoinRoom() {
     } catch (error) {
       console.error('Не удалось присоединиться к комнате:', error);
       alert(`Не удалось присоединиться к комнате: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className={styles.joinRoomContainer}>
-      <h1>Присоединиться к комнате</h1>
-      <form onSubmit={handleJoinRoom} className={styles.joinForm}>
-        <input
-          type="text"
-          placeholder="Имя комнаты"
-          value={roomName}
-          onChange={(e) => setRoomName(e.target.value)}
-          required
-          className={styles.inputField}
-        />
-        <input
-          type="text"
-          placeholder="Ваше имя"
-          value={participantName}
-          onChange={(e) => setParticipantName(e.target.value)}
-          required
-          className={styles.inputField}
-        />
-        <button type="submit" className={styles.joinButton}>
-          Войти
-        </button>
-      </form>
+      <div className={styles.loginBox}>
+        <div className={styles.logoSection}>
+          <div className={styles.brandContainer}>
+            <img 
+              src="/icon_onliver.png" 
+              alt="Onliver" 
+              className={styles.logo}
+            />
+            <h1 className={styles.appName}>onliver</h1>
+          </div>
+          <p className={styles.subtitle}>Смотрите фильмы вместе с друзьями</p>
+        </div>
+        
+        <form onSubmit={handleJoinRoom} className={styles.joinForm}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="roomName" className={styles.label}>
+              Название комнаты
+            </label>
+            <input
+              id="roomName"
+              type="text"
+              placeholder="Например: Пятничный киновечер"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              required
+              className={styles.inputField}
+            />
+          </div>
+          
+          <div className={styles.inputGroup}>
+            <label htmlFor="participantName" className={styles.label}>
+              Ваше имя
+            </label>
+            <input
+              id="participantName"
+              type="text"
+              placeholder="Как вас зовут?"
+              value={participantName}
+              onChange={(e) => setParticipantName(e.target.value)}
+              required
+              className={styles.inputField}
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            className={styles.joinButton}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className={styles.loadingSpinner}></div>
+            ) : (
+              'Присоединиться к просмотру'
+            )}
+          </button>
+        </form>
+        
+        <div className={styles.footer}>
+          <p>Совместный просмотр фильмов с видеочатом</p>
+        </div>
+      </div>
     </div>
   );
 }
