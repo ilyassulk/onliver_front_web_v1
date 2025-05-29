@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './ChatWidget.module.scss';
+import DeleteIcon from '../../assets/icons/DeleteIcon';
 
 function ChatWidget({
   isVisible,
@@ -139,21 +140,23 @@ function ChatWidget({
                 Пока нет сообщений в комнате {roomId}
               </div>
             ) : (
-              currentMessages.map((message) => (
-                  <div key={message.id} className={styles.message}>
+              currentMessages.map((message) => {
+                const isMyMessage = message.username === username;
+                return (
+                  <div key={message.id} className={`${styles.message} ${isMyMessage ? styles.myMessage : styles.otherMessage}`}>
                     <div className={styles.messageHeader}>
                       <span className={styles.username}>{message.username}</span>
                       <div className={styles.messageActions}>
                         <span className={styles.timestamp}>
                           {new Date(message.timestamp).toLocaleTimeString()}
                         </span>
-                        {message.userId === userId && (
+                        {message.username === username && (
                           <button 
                             className={styles.deleteBtn}
                             onClick={() => deleteMessage(message.id)}
                             title="Удалить сообщение"
                           >
-                            🗑️
+                            <DeleteIcon />
                           </button>
                         )}
                       </div>
@@ -162,7 +165,8 @@ function ChatWidget({
                       {message.content}
                     </div>
                   </div>
-                ))
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>

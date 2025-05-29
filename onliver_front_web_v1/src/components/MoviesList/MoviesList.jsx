@@ -153,17 +153,25 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
         </div>
         
         {showForm && <CreateMovieForm onCloseForm={() => { setShowForm(false); fetchMovies(); }} />}
-        {selectedMovie && <MovieDetailView movie={selectedMovie} onClose={handleCloseMovieView} />}
+        {selectedMovie && (
+          <MovieDetailView 
+            movie={selectedMovie} 
+            onClose={handleCloseMovieView}
+            onAddToPlaylist={showAddButtons ? onAddToPlaylist : null}
+            showAddButton={showAddButtons}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-function MovieDetailView({ movie, onClose }) {
+function MovieDetailView({ movie, onClose, onAddToPlaylist, showAddButton }) {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [videoError, setVideoError] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
   const handlePlayMovie = async () => {
     setLoadingVideo(true);
@@ -189,6 +197,17 @@ function MovieDetailView({ movie, onClose }) {
   const handleCloseVideoModal = () => {
     setShowVideoModal(false);
     setVideoUrl('');
+  };
+
+  const handleAddToPlaylist = () => {
+    if (onAddToPlaylist) {
+      setIsAdding(true);
+      onAddToPlaylist(movie.id);
+      
+      setTimeout(() => {
+        setIsAdding(false);
+      }, 1200);
+    }
   };
 
   return (
@@ -226,6 +245,17 @@ function MovieDetailView({ movie, onClose }) {
               <PlayIcon />
               {loadingVideo ? 'Загрузка...' : 'Предпросмотр'}
             </button>
+            
+            {showAddButton && (
+              <button 
+                className={`${styles.addToPlaylistBtnDetail} ${isAdding ? styles.adding : ''}`}
+                onClick={handleAddToPlaylist}
+                title="Добавить в плейлист"
+                disabled={isAdding}
+              >
+                {isAdding ? <CheckIcon /> : <AddIcon />}
+              </button>
+            )}
           </div>
         </div>
       </div>

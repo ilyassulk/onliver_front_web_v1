@@ -1121,6 +1121,65 @@
   }
 }
 
+.addToPlaylistBtnDetail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  color: white;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  }
+
+  &:active:not(.adding) {
+    transform: scale(0.95) translateY(0);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+  }
+
+  &.adding {
+    background: transparent;
+    color: #4caf50;
+    border-color: #4caf50;
+    animation: addingPulse 1.2s ease-in-out;
+    cursor: not-allowed;
+
+    svg {
+      animation: checkIconSpin 1.2s ease-in-out;
+    }
+  }
+
+  &:disabled {
+    transform: none;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    transition: all 0.3s ease;
+  }
+  
+  @media (max-width: 768px) {
+    width: 48px;
+    height: 48px;
+    
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
 // Стили для видео модала
 .videoModalOverlay {
   position: fixed;

@@ -29,6 +29,7 @@ function PlaylistItem({
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [touchStartY, setTouchStartY] = useState(0);
   const [touchCurrentY, setTouchCurrentY] = useState(0);
@@ -36,6 +37,7 @@ function PlaylistItem({
   
   const itemRef = useRef(null);
   const touchTimeoutRef = useRef(null);
+  const currentContentInfoRef = useRef(null);
 
   // Определяем, является ли устройство сенсорным
   const isTouchDevice = () => {
@@ -46,16 +48,65 @@ function PlaylistItem({
   useEffect(() => {
     setImageLoaded(false);
     setImageError(false);
+    setRetryCount(0);
+    currentContentInfoRef.current = contentInfo;
+    
+    // Если contentInfo есть, проверяем, не загружено ли изображение уже в кеше
+    if (contentInfo && contentInfo.avatarUrl) {
+      const img = new Image();
+      img.onload = () => {
+        // Проверяем, что contentInfo не изменился пока изображение загружалось
+        if (currentContentInfoRef.current === contentInfo) {
+          setImageLoaded(true);
+          setImageError(false);
+        }
+      };
+      img.onerror = () => {
+        // Не устанавливаем ошибку здесь, пусть основной img элемент попробует загрузить
+        console.warn(`Предварительная проверка изображения не удалась: ${contentInfo.avatarUrl}`);
+      };
+      img.src = contentInfo.avatarUrl;
+    }
   }, [contentInfo]);
 
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-    setImageError(false);
+  const handleImageLoad = (event) => {
+    // Проверяем, что событие относится к текущему contentInfo
+    const loadedSrc = event.target.src;
+    const originalUrl = loadedSrc.split('?')[0]; // Убираем query параметры для сравнения
+    
+    if (currentContentInfoRef.current && 
+        (loadedSrc === currentContentInfoRef.current.avatarUrl || 
+         originalUrl === currentContentInfoRef.current.avatarUrl)) {
+      setImageLoaded(true);
+      setImageError(false);
+      setRetryCount(0);
+    }
   };
 
-  const handleImageError = () => {
-    setImageLoaded(false);
-    setImageError(true);
+  const handleImageError = (event) => {
+    // Проверяем, что событие относится к текущему contentInfo
+    const failedSrc = event.target.src;
+    const originalUrl = failedSrc.split('?')[0]; // Убираем query параметры для сравнения
+    
+    if (currentContentInfoRef.current && 
+        (failedSrc === currentContentInfoRef.current.avatarUrl || 
+         originalUrl === currentContentInfoRef.current.avatarUrl)) {
+      console.warn(`Ошибка загрузки изображения: ${failedSrc}, попытка ${retryCount + 1}`);
+      
+      // Пытаемся загрузить повторно максимум 2 раза
+      if (retryCount < 2) {
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          // Принудительно обновляем src, добавляя timestamp для обхода кеша
+          const img = event.target;
+          const originalSrc = img.src.split('?')[0]; // Убираем существующие query параметры
+          img.src = `${originalSrc}?retry=${retryCount + 1}&t=${Date.now()}`;
+        }, 1000 * (retryCount + 1)); // Увеличиваем задержку с каждой попыткой
+      } else {
+        setImageLoaded(false);
+        setImageError(true);
+      }
+    }
   };
 
   // Определяем, можно ли запустить ячейку (только когда плейлист не активен)
@@ -120,6 +171,7 @@ function PlaylistItem({
         clearTimeout(touchTimeoutRef.current);
       }
       document.body.style.overflow = '';
+      currentContentInfoRef.current = null; // Очищаем ссылку
     };
   }, []);
 
@@ -153,7 +205,8 @@ function PlaylistItem({
             <>
               {!imageError && (
                 <img 
-                  src={contentInfo.avatarUrl} 
+                  key={`${contentInfo.avatarUrl}-${retryCount}`}
+                  src={retryCount > 0 ? `${contentInfo.avatarUrl}?retry=${retryCount}&t=${Date.now()}` : contentInfo.avatarUrl}
                   alt={contentInfo.name}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
@@ -161,7 +214,9 @@ function PlaylistItem({
                 />
               )}
               {(!imageLoaded || imageError) && (
-                <div className={styles.iconPlaceholder}>🎬</div>
+                <div className={styles.iconPlaceholder}>
+                  {imageError ? '⚠️' : '🎬'}
+                </div>
               )}
             </>
           ) : (

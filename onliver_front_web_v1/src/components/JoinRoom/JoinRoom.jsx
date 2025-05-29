@@ -90,7 +90,10 @@ function JoinRoom() {
             {isLoading ? (
               <div className={styles.loadingSpinner}></div>
             ) : (
-              'Присоединиться к просмотру'
+              <>
+                <span className={styles.buttonTextDesktop}>Присоединиться к просмотру</span>
+                <span className={styles.buttonTextMobile}>Присоединиться</span>
+              </>
             )}
           </button>
         </form>
