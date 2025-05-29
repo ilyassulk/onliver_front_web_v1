@@ -20,7 +20,7 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
     setLoading(true);
     setError('');
     try {
-      const resp = await fetch(`https://onliver.ru:8080/content?page=${page}&size=10`);
+      const resp = await fetch(`https://onliver.ru:8080/content?page=${page}&size=6`);
       if (!resp.ok) throw new Error(`Ошибка: ${resp.status}`);
       const data = await resp.json();
       setMovies(data.content);
