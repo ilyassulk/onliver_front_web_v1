@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import AddIcon from '../../assets/icons/AddIcon';
 import LoadIcon from '../../assets/icons/LoadIcon';
+import EyeIcon from '../../assets/icons/EyeIcon';
+import CheckIcon from '../../assets/icons/CheckIcon';
+import PlayIcon from '../../assets/icons/PlayIcon';
 import styles from './MoviesList.module.scss';
 
 function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
@@ -11,6 +14,7 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
+  const [addingMovies, setAddingMovies] = useState(new Set());
 
   const fetchMovies = async () => {
     setLoading(true);
@@ -46,7 +50,17 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
 
   const handleAddToPlaylist = (movieId) => {
     if (onAddToPlaylist) {
+      setAddingMovies(prev => new Set(prev).add(movieId));
+      
       onAddToPlaylist(movieId);
+      
+      setTimeout(() => {
+        setAddingMovies(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(movieId);
+          return newSet;
+        });
+      }, 1200);
     }
   };
 
@@ -92,11 +106,12 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
                     {showAddButtons ? (
                       <>
                         <button 
-                          className={styles.addToPlaylistBtn}
+                          className={`${styles.addToPlaylistBtn} ${addingMovies.has(movie.id) ? styles.adding : ''}`}
                           onClick={() => handleAddToPlaylist(movie.id)}
                           title="Добавить в плейлист"
+                          disabled={addingMovies.has(movie.id)}
                         >
-                          <AddIcon />
+                          {addingMovies.has(movie.id) ? <CheckIcon /> : <AddIcon />}
                           Добавить
                         </button>
                         <button 
@@ -104,7 +119,7 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
                           onClick={() => handleViewMovie(movie)}
                           title="Просмотреть карточку"
                         >
-                          👁️ Просмотр
+                          <EyeIcon />
                         </button>
                       </>
                     ) : (
@@ -114,7 +129,7 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
                           onClick={() => handleViewMovie(movie)}
                           title="Просмотреть карточку"
                         >
-                          👁️ Просмотр
+                          <EyeIcon />
                         </button>
                         <button 
                           className={styles.deleteBtn}
@@ -145,29 +160,84 @@ function MoviesList({ onClose, onAddToPlaylist, showAddButtons = false }) {
 }
 
 function MovieDetailView({ movie, onClose }) {
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [loadingVideo, setLoadingVideo] = useState(false);
+  const [videoError, setVideoError] = useState('');
+
+  const handlePlayMovie = async () => {
+    setLoadingVideo(true);
+    setVideoError('');
+    
+    try {
+      const response = await fetch(`https://onliver.ru:8080/content/${movie.id}/url`);
+      if (!response.ok) {
+        throw new Error(`Ошибка загрузки видео: ${response.status}`);
+      }
+      
+      const videoUrl = await response.text();
+      console.log('Полученный URL видео:', videoUrl);
+      setVideoUrl(videoUrl);
+      setShowVideoModal(true);
+    } catch (error) {
+      setVideoError(error.message);
+    } finally {
+      setLoadingVideo(false);
+    }
+  };
+
+  const handleCloseVideoModal = () => {
+    setShowVideoModal(false);
+    setVideoUrl('');
+  };
+
   return (
-    <div className={styles.detailOverlay}>
-      <div className={styles.detailModal}>
-        <div className={styles.detailHeader}>
-          <h2>Информация о фильме</h2>
-          <button className={styles.detailCloseBtn} onClick={onClose}>×</button>
-        </div>
-        
-        <div className={styles.detailContent}>
-          <div className={styles.detailImageContainer}>
-            <img src={movie.avatarUrl} alt={movie.name} className={styles.detailImage} />
+    <>
+      <div className={styles.detailOverlay}>
+        <div className={styles.detailModal}>
+          <div className={styles.detailHeader}>
+            <h2>Информация о фильме</h2>
+            <button className={styles.detailCloseBtn} onClick={onClose}>×</button>
           </div>
           
-          <div className={styles.detailInfo}>
-            <h3 className={styles.detailTitle}>{movie.name}</h3>
-            <div className={styles.detailDescription}>
-              <h4>Описание:</h4>
-              <p>{movie.description}</p>
+          <div className={styles.detailContent}>
+            <div className={styles.detailImageContainer}>
+              <img src={movie.avatarUrl} alt={movie.name} className={styles.detailImage} />
             </div>
+            
+            <div className={styles.detailInfo}>
+              <h3 className={styles.detailTitle}>{movie.name}</h3>
+              <div className={styles.detailDescription}>
+                <h4>Описание:</h4>
+                <p>{movie.description}</p>
+              </div>
+              
+              {videoError && <div className={styles.error}>{videoError}</div>}
+            </div>
+          </div>
+          
+          <div className={styles.detailActions}>
+            <button 
+              className={styles.playBtn}
+              onClick={handlePlayMovie}
+              disabled={loadingVideo}
+              title="Предпросмотр фильма"
+            >
+              <PlayIcon />
+              {loadingVideo ? 'Загрузка...' : 'Предпросмотр'}
+            </button>
           </div>
         </div>
       </div>
-    </div>
+      
+      {showVideoModal && (
+        <VideoModal 
+          videoUrl={videoUrl} 
+          movieTitle={movie.name}
+          onClose={handleCloseVideoModal} 
+        />
+      )}
+    </>
   );
 }
 
@@ -178,18 +248,52 @@ function CreateMovieForm({ onCloseForm }) {
   const [videoFile, setVideoFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState('');
+
+  const uploadFileWithProgress = (url, file, onProgress) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percentComplete = (e.loaded / e.total) * 100;
+          onProgress(percentComplete);
+        }
+      });
+      
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Ошибка загрузки: ${xhr.status}`));
+        }
+      });
+      
+      xhr.addEventListener('error', () => {
+        reject(new Error('Ошибка сети при загрузке файла'));
+      });
+      
+      xhr.open('PUT', url);
+      xhr.send(file);
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setUploadProgress(0);
+    
     if (!avatarFile || !videoFile) {
       setError('Select avatar and video files');
       setLoading(false);
       return;
     }
+    
     try {
       // Шаг 1: получаем presigned URLs
+      setUploadStage('Подготовка загрузки...');
       const respUrls = await fetch('https://onliver.ru:8080/content/uploadurls', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,21 +301,39 @@ function CreateMovieForm({ onCloseForm }) {
       });
       if (!respUrls.ok) throw new Error(`Ошибка: ${respUrls.status}`);
       const urls = await respUrls.json();
-      // Шаг 2: загружаем файлы напрямую
-      await fetch(urls.avatar.uploadUrl, { method: 'PUT', body: avatarFile });
-      await fetch(urls.content.uploadUrl, { method: 'PUT', body: videoFile });
+      
+      // Шаг 2: загружаем файлы с отслеживанием прогресса
+      setUploadStage('Загрузка постера...');
+      await uploadFileWithProgress(urls.avatar.uploadUrl, avatarFile, (progress) => {
+        setUploadProgress(progress * 0.4); // 40% для постера
+      });
+      
+      setUploadStage('Загрузка видео...');
+      await uploadFileWithProgress(urls.content.uploadUrl, videoFile, (progress) => {
+        setUploadProgress(40 + (progress * 0.5)); // 50% для видео (40% + 50% = 90%)
+      });
+      
       // Шаг 3: отправляем метаданные
+      setUploadStage('Завершение...');
+      setUploadProgress(95);
       const respCreate = await fetch('https://onliver.ru:8080/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: name, description, avatarKey: urls.avatar.objectKey, contentKey: urls.content.objectKey }),
       });
       if (!respCreate.ok) throw new Error(`Ошибка: ${respCreate.status}`);
-      onCloseForm();
+      
+      setUploadProgress(100);
+      setUploadStage('Завершено!');
+      setTimeout(() => {
+        onCloseForm();
+      }, 500);
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
+      setUploadProgress(0);
+      setUploadStage('');
     }
   };
 
@@ -302,10 +424,56 @@ function CreateMovieForm({ onCloseForm }) {
               disabled={loading}
               className={styles.submitBtn}
             >
-              {loading ? 'Загрузка...' : 'Загрузить контент'}
+              {loading ? (
+                <div className={styles.uploadProgress}>
+                  <div className={styles.progressInfo}>
+                    <span>{uploadStage}</span>
+                    <span>{Math.round(uploadProgress)}%</span>
+                  </div>
+                  <div className={styles.progressBar}>
+                    <div 
+                      className={styles.progressFill} 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ) : 'Загрузить контент'}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function VideoModal({ videoUrl, movieTitle, onClose }) {
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className={styles.videoModalOverlay} onClick={handleOverlayClick}>
+      <div className={styles.videoModalContainer}>
+        <div className={styles.videoModalHeader}>
+          <h3>{movieTitle}</h3>
+          <button className={styles.videoModalCloseBtn} onClick={onClose}>×</button>
+        </div>
+        
+        <div className={styles.videoContainer}>
+          <video 
+            src={videoUrl} 
+            controls 
+            autoPlay
+            className={styles.videoPlayer}
+            onError={(e) => {
+              console.error('Ошибка загрузки видео:', e);
+            }}
+          >
+            Ваш браузер не поддерживает воспроизведение видео.
+          </video>
+        </div>
       </div>
     </div>
   );
